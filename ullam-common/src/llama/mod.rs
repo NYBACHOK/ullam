@@ -4,6 +4,7 @@ use std::{
         LazyLock, Mutex,
         atomic::{AtomicBool, Ordering},
     },
+    time::{Duration, Instant},
 };
 
 use anyhow::Context;
@@ -25,6 +26,8 @@ pub mod serve;
 pub const LLM_DATA_DIR: &str = "llm";
 pub const LLM_MODELS_DIR: &str = "models";
 
+const TIMEOUT: Duration = Duration::from_secs(60);
+
 static IS_LLM_ENGINE_LOADED: AtomicBool = AtomicBool::new(false);
 
 static LLM_CHILD_PROCESS: Mutex<Option<Child>> = Mutex::new(None);
@@ -32,7 +35,7 @@ static LLM_CHILD_PROCESS: Mutex<Option<Child>> = Mutex::new(None);
 // OpenAI-compatible HTTP client configured for local server (e.g. llama.cpp server / ollama)
 static LLM_HTTP_CLIENT: LazyLock<OpenAIClient<OpenAIConfig>> = LazyLock::new(|| {
     let config = OpenAIConfig::new()
-        .with_api_base("http://localhost:8080/v1")
+        .with_api_base("http://localhost:9931/v1")
         .with_api_key("not-needed-for-local");
 
     OpenAIClient::with_config(config)
@@ -66,20 +69,24 @@ pub async fn llm_download() -> anyhow::Result<()> {
 }
 
 pub async fn llm_load(model: Model) -> anyhow::Result<()> {
-    let model_path = get_or_load(model, APP_DATA_DIR.join(LLM_DATA_DIR)).await?;
+    let model_path = get_or_load(model).await?;
 
     let mut llm_backend_lock = LLM_CHILD_PROCESS.lock().map_err(|_| {
         anyhow::anyhow!("POISONED LOCK: Failed to acquire LLM_CHILD_PROCESS mutex lock")
     })?;
 
     if llm_backend_lock.is_none() {
-        let child = serve::ollama_serve(APP_DATA_DIR.join(LLM_DATA_DIR), model_path)?;
+        let child = serve::llama_serve(APP_DATA_DIR.join(LLM_DATA_DIR), model_path)?;
         *llm_backend_lock = Some(child);
     } else {
         tracing::warn!("Tried to init new server instance while old is still running");
     }
 
+    std::mem::drop(llm_backend_lock);
+
     IS_LLM_ENGINE_LOADED.store(true, Ordering::SeqCst);
+
+    wait_until_ready(TIMEOUT).await?;
 
     Ok(())
 }
@@ -114,7 +121,7 @@ pub async fn llm_generate(prompt: &str, max_tokens: u32) -> anyhow::Result<Strin
                 .build()?
                 .into(),
         ])
-        .max_tokens(max_tokens)
+        .max_completion_tokens(max_tokens)
         .build()?;
 
     let mut response = LLM_HTTP_CLIENT.chat().create(request).await?;
@@ -138,7 +145,7 @@ async fn create_dir_if_not_exists(path: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-async fn get_or_load(model: Model, dir: PathBuf) -> anyhow::Result<PathBuf> {
+async fn get_or_load(model: Model) -> anyhow::Result<PathBuf> {
     fn check_is_gguf(name: impl AsRef<str>) -> anyhow::Result<()> {
         if !name.as_ref().ends_with(".gguf") {
             return Err(anyhow::anyhow!("Not a GGUF model"));
@@ -161,7 +168,6 @@ async fn get_or_load(model: Model, dir: PathBuf) -> anyhow::Result<PathBuf> {
                 .with_context(|| "unable to create huggingface api")?
                 .model(owner, repo)
                 .download_file()
-                .local_dir(dir)
                 .filename(model)
                 .progress(ChunkProgressLogger::default())
                 .send()
@@ -169,4 +175,21 @@ async fn get_or_load(model: Model, dir: PathBuf) -> anyhow::Result<PathBuf> {
                 .with_context(|| "unable to download model")
         }
     }
+}
+
+async fn wait_until_ready(timeout: Duration) -> anyhow::Result<()> {
+    let start = Instant::now();
+
+    tracing::info!("Waiting for LLM server to start");
+
+    while start.elapsed() < timeout {
+        if LLM_HTTP_CLIENT.models().list().await.is_ok() {
+            tokio::time::sleep(Duration::from_secs(2)).await;
+
+            tracing::info!("LLM engine is fully loaded and accepting requests");
+            return Ok(());
+        }
+    }
+
+    anyhow::bail!("Timed out waiting for LLM server readiness")
 }

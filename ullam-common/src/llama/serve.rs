@@ -16,7 +16,7 @@ pub fn binary_location(dir: &Path) -> std::path::PathBuf {
     }
 }
 
-pub fn ollama_serve(
+pub fn llama_serve(
     ollama_dir: impl AsRef<Path>,
     model_path: impl AsRef<Path>,
 ) -> Result<Child, BetterIoError> {
@@ -28,9 +28,9 @@ pub fn ollama_serve(
         .kill_on_drop(true)
         .arg("-m")
         .arg(model_path.as_ref())
-        .args(["--port", "8080"])
+        .args(["--port", "9931"])
         .stderr(Stdio::inherit())
-        .stdout(Stdio::piped())
+        .stdout(Stdio::inherit())
         .spawn()
         .map_err(|e| BetterIoError::new(bin, "start of llama binary", e))
 }
