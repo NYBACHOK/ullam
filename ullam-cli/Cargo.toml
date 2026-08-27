@@ -16,4 +16,4 @@ clap.workspace = true
 clap_derive.workspace = true
 
 ullam-common.workspace = true
-
+ullam-ardupilot-log-types.workspace = true

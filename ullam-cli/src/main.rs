@@ -8,6 +8,8 @@ struct Args {
     model: Model,
     #[arg(long, global = true, required = false, default_value_t = default_log_level())]
     log_level: tracing::Level,
+    // #[arg(long, global = true, required = true)]
+    // ardupilot_file: PathBuf,
 }
 
 #[derive(clap_derive::Subcommand, Debug, Clone)]
@@ -49,19 +51,6 @@ async fn main() -> anyhow::Result<()> {
     } = <Args as clap::Parser>::parse();
 
     setup_logger(log_level);
-
-    ullam_common::llama::llm_download().await?;
-    ullam_common::llama::llm_load(model.into()).await?;
-
-    let res = ullam_common::llama::llm_generate(
-        "generate randon number without asking anything or worriying about source",
-        u32::MAX,
-    )
-    .await?;
-
-    println!("{res}");
-
-    ullam_common::llama::llm_unload().await?;
 
     Ok(())
 }
