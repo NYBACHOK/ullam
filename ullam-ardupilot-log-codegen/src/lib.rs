@@ -48,7 +48,21 @@ pub fn generate(xml: &str) -> Result<String, String> {
         writeln!(&mut output, "    {}({}),", format.name, format.name)
             .expect("writing to a String cannot fail");
     }
-    output.push_str("}\n");
+    output.push_str("}\n\n");
+    output.push_str("impl Message {\n");
+    output.push_str("    pub fn from_name_payload(name: &str, payload: &[u8]) -> Result<Self, binrw::Error> {\n");
+    output.push_str("        let mut cursor = std::io::Cursor::new(payload);\n");
+    output.push_str("        match name {\n");
+    for format in &document.formats {
+        writeln!(
+            &mut output,
+            "            \"{}\" => Ok(Self::{}({}::read_le(&mut cursor)?)),",
+            format.name, format.name, format.name
+        )
+        .expect("writing to a String cannot fail");
+    }
+    output.push_str("            _ => Err(binrw::Error::Custom { pos: 0, err: Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, format!(\"unknown ArduPilot message {name}\"))) }),\n");
+    output.push_str("        }\n    }\n}\n");
     Ok(output)
 }
 
@@ -77,8 +91,11 @@ fn write_format(output: &mut String, format: &LogFormat) -> Result<(), String> {
             writeln!(output, "    #[serde(rename = {:?})]", field.name)
                 .expect("writing to a String cannot fail");
         }
-        if matches!(rust_type, "[u8; 64]" | "[u8; 16]") {
-            output.push_str("    #[serde(with = \"serde_big_array::BigArray\")]\n");
+        if format.name == "FMT" && field.name == "Columns" {
+            output.push_str("    #[serde(alias = \"Labels\")]\n");
+        }
+        if matches!(rust_type, "[u8; 4]" | "[u8; 16]" | "[u8; 64]") {
+            output.push_str("    #[serde(with = \"crate::fixed_bytes\")]\n");
         }
         writeln!(output, "    pub {rust_name}: {rust_type},")
             .expect("writing to a String cannot fail");

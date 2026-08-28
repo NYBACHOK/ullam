@@ -103,6 +103,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ardupilot-binlog"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77e1b49bbebe35698219f8aec88cd07678f8777de31d385417c644a622f505ac"
+dependencies = [
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "array-init"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3102,8 +3112,10 @@ name = "ullam-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "ardupilot-binlog",
  "clap",
  "clap_derive",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
