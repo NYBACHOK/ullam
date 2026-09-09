@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["ullam-cli", "ullam-common"]
+members = ["ullam-cli", "ullam-common", "ullam-parser"]
 
 [workspace.package]
 license = "MIT"
@@ -21,8 +21,8 @@ serde-big-array = "0.5"
 
 # UAV
 ardupilot-binlog = { version = "0.2", features = ["serde"] }
-binrw = { version = "0.15", features = ["verbose-backtrace"] }
-quick-xml = { version = "0.38", features = ["serialize"] }
+# binrw = { version = "0.15", features = ["verbose-backtrace"] }
+# quick-xml = { version = "0.42", features = ["serialize"] }
 # mavlink = { version = "0.18", default-features = false, features = [
 #     "std",
 #     "transport-tcp",
@@ -37,10 +37,10 @@ quick-xml = { version = "0.38", features = ["serialize"] }
 # io
 reqwest = { version = "0.13", features = ["json", "stream", "rustls"] }
 hf-hub = { version = "1.0", features = ["rustls-tls"] }
-async-openai = "0.41"
+async-openai = "0.42"
 
 # utils
-dirs = "6.0"
+dirs = "7.0"
 anyhow = "1.0"
 thiserror = "2.0"
 

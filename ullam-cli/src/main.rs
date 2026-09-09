@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
+use clap::CommandFactory;
 
 #[derive(clap_derive::Parser)]
 #[non_exhaustive]
@@ -57,62 +58,7 @@ async fn main() -> anyhow::Result<()> {
 
     setup_logger(log_level);
 
-    if let Some(path) = ardupilot_file {
-        parse_ardupilot_log(&path)?;
-    }
-
     Ok(())
-}
-
-fn parse_ardupilot_log(path: &PathBuf) -> anyhow::Result<()> {
-    let file = ardupilot_binlog::File::open(path)
-        .with_context(|| format!("failed to open ArduPilot log {}", path.display()))?;
-    let entries = file
-        .entries()
-        .with_context(|| format!("failed to read ArduPilot log {}", path.display()))?;
-
-    for entry in entries {
-        let entry = entry.with_context(|| {
-            format!(
-                "failed to parse an entry in ArduPilot log {}",
-                path.display()
-            )
-        })?;
-        let fields = entry
-            .fields()
-            .map(|(name, value)| -> anyhow::Result<_> {
-                Ok((name.to_owned(), field_value_to_json(value)?))
-            })
-            .collect::<Result<serde_json::Map<_, _>, _>>()?;
-        let typed =
-            serde_json::from_value::<ullam_ardupilot_log_types::Message>(serde_json::json!({
-                "message": entry.name,
-                "data": fields,
-            }))
-            .with_context(|| "failed to deserialize ArduPilot entry into generated message type")?;
-
-        tracing::debug!(
-            msg_type = entry.msg_type,
-            timestamp_usec = ?entry.timestamp_usec,
-            message = ?typed,
-            "parsed ArduPilot message"
-        );
-    }
-
-    Ok(())
-}
-
-fn field_value_to_json(value: &ardupilot_binlog::FieldValue) -> anyhow::Result<serde_json::Value> {
-    let value = match value {
-        ardupilot_binlog::FieldValue::Int(value) => serde_json::json!(value),
-        ardupilot_binlog::FieldValue::Uint(value) => serde_json::json!(value),
-        ardupilot_binlog::FieldValue::Float(value) => serde_json::json!(value),
-        ardupilot_binlog::FieldValue::String(value) => {
-            serde_json::Value::Array(value.bytes().map(serde_json::Value::from).collect())
-        }
-        ardupilot_binlog::FieldValue::Array(value) => serde_json::json!(value),
-    };
-    Ok(value)
 }
 
 fn setup_logger(log_level: tracing::Level) {
