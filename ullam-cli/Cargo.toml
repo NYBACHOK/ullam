@@ -18,4 +18,3 @@ ardupilot-binlog.workspace = true
 serde_json.workspace = true
 
 ullam-common.workspace = true
-ullam-ardupilot-log-types.workspace = true

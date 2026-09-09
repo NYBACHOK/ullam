@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["ullam-cli", "ullam-common", "ullam-ardupilot-log-codegen", "ullam-ardupilot-log-types"]
+members = ["ullam-cli", "ullam-common"]
 
 [workspace.package]
 license = "MIT"
