@@ -3129,6 +3129,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ullam-preprocessor"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "ullam-parser",
+]
+
+[[package]]
 name = "unicase"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

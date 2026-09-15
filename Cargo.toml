@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["ullam-cli", "ullam-common", "ullam-parser"]
+members = ["ullam-cli", "ullam-common", "ullam-parser", "ullam-preprocessor"]
 
 [workspace.package]
 license = "MIT"
@@ -58,8 +58,8 @@ zip = "8.6"
 
 # local
 ullam-common = { path = "./ullam-common" }
-ullam-ardupilot-log-codegen = { path = "./ullam-ardupilot-log-codegen" }
-ullam-ardupilot-log-types = { path = "./ullam-ardupilot-log-types" }
+ullam-parser = { path = "./ullam-parser" }
+ullam-preprocessor = { path = "./ullam-preprocessor" }
 
 [workspace.lints.rust]
 rust_2018_idioms = "deny"

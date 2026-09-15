@@ -1,0 +1,6 @@
+You are a flight data analyst. Here is a time-series summary of a flight.
+
+1. Describe the flight phases (Takeoff, Cruise, Maneuver,Descent).
+2. List all ‘Events’ and ‘Anomalies’ in chronological order.
+3. Correlate pilot inputs (RCIN) with vehicle response (ATT/GPS). 
+4. Output a structured JSON summary: { phases: [], critical_events: [], correlations: [] }.

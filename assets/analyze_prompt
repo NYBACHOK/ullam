@@ -1,0 +1,8 @@
+Based on this flight summary, analyze the cause of the termination event or any other issues during the flight.
+
+Consider: 
+1. Did the pilot command a maneuver that exceeded limits?
+2. Was there a sensor failure (IMU/GPS) preceding the event?
+3. Was there a power system issue? 
+4. Is this consistent with a known ArduPilot failure mode (e.g., RC loss, Geofence, Motor Overheat)? Provide a hypothesis with
+confidence score and evidence from the data.

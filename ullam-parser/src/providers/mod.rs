@@ -11,7 +11,7 @@ mod gps;
 mod imu;
 mod rc;
 
-pub use self::{ common::*, control::*, ekf::*, gps::*, imu::*, rc::*,};
+pub use self::{common::*, control::*, ekf::*, gps::*, imu::*, rc::*};
 
 const TIME_US_LABEL: &str = "TimeUS";
 
@@ -27,7 +27,6 @@ pub trait MessageSchemaProvider: Send + Sync {
     /// * `value` - The raw parsed value from the binary log.
     fn format_field(&self, label: String, value: FieldValue) -> Result<LogField, ParseError>;
 }
-
 
 /// Helper function for default parsing of unknown fields.
 fn default_parse(value: FieldValue, label: &str) -> Result<LogValue, ParseError> {
