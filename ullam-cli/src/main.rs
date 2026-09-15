@@ -11,7 +11,7 @@ struct Args {
     model: Model,
     #[arg(long, global = true, required = false, default_value_t = default_log_level())]
     log_level: tracing::Level,
-    #[arg(long, global = true, required = false)]
+    #[arg(short = 'i', long, global = true, required = false)]
     ardupilot_file: Option<PathBuf>,
 }
 
@@ -51,10 +51,32 @@ impl From<Model> for ullam_common::llama::Model {
 async fn main() -> anyhow::Result<()> {
     let Args {
         log_level,
-        model: _,
+        model,
         ardupilot_file,
         ..
     } = <Args as clap::Parser>::parse();
+
+    match &model {
+        Model::Local { path } if !path.ends_with(".gguf") => {
+            Args::command()
+                .error(
+                    clap::error::ErrorKind::InvalidValue,
+                    "Model file should be in `gguf` format",
+                )
+                .exit();
+        }
+        _ => (),
+    }
+
+    let ardupilot_file = match ardupilot_file {
+        Some(file) if file.exists() => file,
+        _ => Args::command()
+            .error(
+                clap::error::ErrorKind::InvalidValue,
+                "Model file should be in `gguf` format",
+            )
+            .exit(),
+    };
 
     setup_logger(log_level);
 
