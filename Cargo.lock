@@ -3089,7 +3089,6 @@ name = "ullam-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "ardupilot-binlog",
  "clap",
  "clap_derive",
  "serde_json",
@@ -3125,6 +3124,7 @@ name = "ullam-parser"
 version = "0.1.0"
 dependencies = [
  "ardupilot-binlog",
+ "serde",
  "thiserror",
 ]
 

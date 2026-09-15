@@ -1,38 +1,35 @@
 use std::time::Duration;
 
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct LogFormat {
-    pub id: u8,
+#[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
+pub struct LogEntry {
+    pub id: u8, // msg_type
     pub name: String,
+    /// Timestamp in microseconds since boot (from the first Q-typed field).
     pub timestamp: Option<Duration>,
-    pub fields: Vec<FormatField>,
+
+    pub fields: Vec<LogField>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct FormatField {
+#[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
+pub struct LogField {
     pub name: String,
-    pub ty: FieldType,
+    pub value: LogValue,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum FieldType {
-    I8,
-    U8,
-    I16,
-    U16,
-    I32,
-    U32,
-    I64,
-    U64,
-    F32,
-    F64,
+#[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
+pub enum LogValue {
+    I64(i64),
+    U64(u64),
+    F64(f64),
+    Array(Vec<i16>),
 
-    // ArduPilot-specific
-    Latitude,
-    Longitude,
-    FlightMode,
-    ScaledI16(f64),
-    ScaledI32(f64),
-    String(usize),
+    // ArduPilot Specific
+    Time(Duration),
+    Latitude(i32),  // Degrees * 1e7
+    Longitude(i32), // Degrees * 1e7
+    Altitude(f64),  // Meters
+    FlightMode(u8),
+    ScaledI16(f64), // int16_t * scale
+    ScaledI32(f64), // int32_t * scale
+    String(String),
 }
