@@ -3096,6 +3096,8 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "ullam-common",
+ "ullam-parser",
+ "ullam-preprocessor",
 ]
 
 [[package]]

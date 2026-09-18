@@ -40,6 +40,16 @@ fn default_parse(value: FieldValue, label: &str) -> Result<LogValue, ParseError>
                 });
             }
         },
+        "I" => match value {
+            FieldValue::Int(val) => LogValue::I64(val),
+            FieldValue::Uint(val) => LogValue::U64(val),
+            _ => {
+                return Err(ParseError::InvalidLabelType {
+                    label: label.to_owned(),
+                    value,
+                });
+            }
+        },
         _ => match value {
             FieldValue::Int(val) => LogValue::I64(val),
             FieldValue::Uint(val) => LogValue::U64(val),

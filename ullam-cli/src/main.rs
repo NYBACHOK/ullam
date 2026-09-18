@@ -1,14 +1,13 @@
-use std::path::PathBuf;
+use std::{fs::File, path::PathBuf};
 
-use anyhow::Context;
 use clap::CommandFactory;
 
 #[derive(clap_derive::Parser)]
 #[non_exhaustive]
 struct Args {
-    /// The path to the model
-    #[command(subcommand)]
-    model: Model,
+    // /// The path to the model
+    // #[command(subcommand)]
+    // model: Model,
     #[arg(long, global = true, required = false, default_value_t = default_log_level())]
     log_level: tracing::Level,
     #[arg(short = 'i', long, global = true, required = false)]
@@ -51,22 +50,22 @@ impl From<Model> for ullam_common::llama::Model {
 async fn main() -> anyhow::Result<()> {
     let Args {
         log_level,
-        model,
         ardupilot_file,
+        // model,
         ..
     } = <Args as clap::Parser>::parse();
 
-    match &model {
-        Model::Local { path } if !path.ends_with(".gguf") => {
-            Args::command()
-                .error(
-                    clap::error::ErrorKind::InvalidValue,
-                    "Model file should be in `gguf` format",
-                )
-                .exit();
-        }
-        _ => (),
-    }
+    // match &model {
+    //     Model::Local { path } if !path.ends_with(".gguf") => {
+    //         Args::command()
+    //             .error(
+    //                 clap::error::ErrorKind::InvalidValue,
+    //                 "Model file should be in `gguf` format",
+    //             )
+    //             .exit();
+    //     }
+    //     _ => (),
+    // }
 
     let ardupilot_file = match ardupilot_file {
         Some(file) if file.exists() => file,
@@ -79,6 +78,12 @@ async fn main() -> anyhow::Result<()> {
     };
 
     setup_logger(log_level);
+
+    let logs = ullam_parser::LogReader::new(File::open(ardupilot_file).unwrap());
+
+    let processed = ullam_preprocessor::process(logs.into_iter().filter_map(|this| this.ok()));
+
+    serde_json::ser::to_writer_pretty(File::create("/home/ghuba/processed.json")?, &processed)?;
 
     Ok(())
 }

@@ -17,8 +17,8 @@ impl MessageSchemaProvider for GpsSchemaProvider {
             "Lat" | "Lng" => {
                 // ArduPilot GPS coordinates are Int32, degrees * 1e7
                 match value {
-                    FieldValue::Int(val) => LogValue::Latitude(val as i32),
-                    FieldValue::Uint(val) => LogValue::Longitude(val as i32),
+                    FieldValue::Int(val) => LogValue::F64(val as f64 / 10_000_000.0),
+                    FieldValue::Uint(val) => LogValue::F64(val as f64 / 10_000_000.0),
                     _ => return Err(ParseError::InvalidLabelType { label, value }),
                 }
             }
@@ -27,7 +27,7 @@ impl MessageSchemaProvider for GpsSchemaProvider {
                 FieldValue::Int(val) => LogValue::F64(val as f64),
                 _ => return Err(ParseError::InvalidLabelType { label, value }),
             },
-            "Status" | "NSats" | "I" => match value {
+            "Status" | "NSats" => match value {
                 FieldValue::Int(val) => LogValue::U64(val as u64),
                 FieldValue::Uint(val) => LogValue::U64(val),
                 _ => return Err(ParseError::InvalidLabelType { label, value }),

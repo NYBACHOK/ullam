@@ -25,11 +25,28 @@ pub enum LogValue {
 
     // ArduPilot Specific
     Time(Duration),
-    Latitude(i32),  // Degrees * 1e7
-    Longitude(i32), // Degrees * 1e7
+    Latitude(i32),  // Degrees
+    Longitude(i32), // Degrees
     Altitude(f64),  // Meters
     FlightMode(u8),
     ScaledI16(f64), // int16_t * scale
     ScaledI32(f64), // int32_t * scale
     String(String),
+}
+
+impl LogValue {
+    pub fn try_into_float(self) -> Option<f64> {
+        match self {
+            LogValue::I64(value) => Some(value as f64),
+            LogValue::U64(value) => Some(value as f64),
+            LogValue::F64(value)
+            | LogValue::Altitude(value)
+            | LogValue::ScaledI16(value)
+            | LogValue::ScaledI32(value) => Some(value),
+            LogValue::Latitude(value) | LogValue::Longitude(value) => Some(value as f64),
+            LogValue::Time(value) => Some(value.as_secs_f64()),
+            LogValue::FlightMode(value) => Some(value as f64),
+            LogValue::Array(_) | LogValue::String(_) => None,
+        }
+    }
 }
