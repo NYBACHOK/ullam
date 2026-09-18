@@ -1,0 +1,12 @@
+[package]
+name = "ullam-llm"
+version = "0.1.0"
+license.workspace = true
+edition.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde.workspace = true
+schemars.workspace = true
