@@ -59,3 +59,5 @@ Important:
 - Prefer "ATT.Roll reached 73 degrees" over "pilot performed an aggressive maneuver".
 - Prefer "RC input and desired roll changed together" over "pilot caused the roll".
 - If evidence is insufficient, state that explicitly.
+- W stands for Window. Section where numeric statistics represents for specific period of time.
+- S stands for Snashots. Section with concrete values of message fields.
