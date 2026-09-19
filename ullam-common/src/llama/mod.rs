@@ -13,7 +13,7 @@ use async_openai::{
     config::OpenAIConfig,
     types::chat::{
         ChatCompletionRequestSystemMessageArgs, ChatCompletionRequestUserMessageArgs,
-        CreateChatCompletionRequestArgs,
+        CreateChatCompletionRequestArgs, ReasoningEffort, ResponseFormat, ResponseFormatJsonSchema,
     },
 };
 use tokio::process::Child;
@@ -105,23 +105,36 @@ pub async fn llm_unload() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn llm_generate(prompt: &str, max_tokens: u32) -> anyhow::Result<String> {
+pub async fn llm_generate<T: schemars::JsonSchema + serde::de::DeserializeOwned>(
+    system_prompt: &str,
+    user_prompt: &str,
+) -> anyhow::Result<T> {
     if !IS_LLM_ENGINE_LOADED.load(Ordering::SeqCst) {
         anyhow::bail!("You need to start llm engine first");
     }
 
+    let response_format = ResponseFormat::JsonSchema {
+        json_schema: ResponseFormatJsonSchema {
+            name: "flight_analysis".to_string(),
+            description: Some("Evidence-based analysis of an ArduPilot flight log".to_string()),
+            schema: serde_json::to_value(&schemars::schema_for!(T)).expect("never fails"),
+            strict: Some(true),
+        },
+    };
+
     let request = CreateChatCompletionRequestArgs::default()
         .messages([
             ChatCompletionRequestSystemMessageArgs::default()
-                .content("You are a helpful assistant.")
+                .content(system_prompt)
                 .build()?
                 .into(),
             ChatCompletionRequestUserMessageArgs::default()
-                .content(prompt)
+                .content(user_prompt)
                 .build()?
                 .into(),
         ])
-        .max_completion_tokens(max_tokens)
+        .response_format(response_format)
+        .reasoning_effort(ReasoningEffort::Medium)
         .build()?;
 
     let mut response = LLM_HTTP_CLIENT.chat().create(request).await?;
@@ -135,7 +148,7 @@ pub async fn llm_generate(prompt: &str, max_tokens: u32) -> anyhow::Result<Strin
             anyhow::anyhow!("failed to retrieve any choice content from model response")
         })?;
 
-    Ok(msg)
+    serde_json::from_str(&msg).context("deserialization of response")
 }
 
 async fn create_dir_if_not_exists(path: &Path) -> std::io::Result<()> {

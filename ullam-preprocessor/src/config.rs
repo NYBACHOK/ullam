@@ -24,9 +24,9 @@ pub struct PreprocessorConfig {
 impl Default for PreprocessorConfig {
     fn default() -> Self {
         Self {
-            window_duration: Duration::from_secs(5),
+            window_duration: Duration::from_secs(20),
             messages_to_ignore: [
-                "FMT", "FMTU", "FMU", "UNIT", "MULT", "FILE", "MSG", "VER", "GPS",
+                "FMT", "FMTU", "FMU", "UNIT", "MULT", "FILE", "MSG", "VER", "GPS", "PARM",
             ]
             .into_iter()
             .map(str::to_owned)

@@ -1,13 +1,14 @@
 use std::{fs::File, path::PathBuf};
 
 use clap::CommandFactory;
+use ullam_common::llama::serve::binary_location;
 
 #[derive(clap_derive::Parser)]
 #[non_exhaustive]
 struct Args {
-    // /// The path to the model
-    // #[command(subcommand)]
-    // model: Model,
+    /// The path to the model
+    #[command(subcommand)]
+    model: Model,
     #[arg(long, global = true, required = false, default_value_t = default_log_level())]
     log_level: tracing::Level,
     #[arg(short = 'i', long, global = true, required = false)]
@@ -26,13 +27,13 @@ enum Model {
     #[clap(name = "hf-model")]
     HuggingFace {
         /// the model name.
-        #[arg(required = false, default_value_t = String::from("Ministral-3b-instruct.Q2_K.gguf"))]
+        #[arg(required = false, default_value_t = String::from("Ministral-3-14B-Reasoning-2512-Q4_K_M.gguf"))]
         model: String,
         /// owner of the repo
-        #[arg(required = false, default_value_t = String::from("QuantFactory"))]
+        #[arg(required = false, default_value_t = String::from("mistralai"))]
         owner: String,
         /// the repo containing the model.
-        #[arg(required = false, default_value_t = String::from("Ministral-3b-instruct-GGUF"))]
+        #[arg(required = false, default_value_t = String::from("Ministral-3-14B-Reasoning-2512-GGUF"))]
         repo: String,
     },
 }
@@ -51,21 +52,21 @@ async fn main() -> anyhow::Result<()> {
     let Args {
         log_level,
         ardupilot_file,
-        // model,
+        model,
         ..
     } = <Args as clap::Parser>::parse();
 
-    // match &model {
-    //     Model::Local { path } if !path.ends_with(".gguf") => {
-    //         Args::command()
-    //             .error(
-    //                 clap::error::ErrorKind::InvalidValue,
-    //                 "Model file should be in `gguf` format",
-    //             )
-    //             .exit();
-    //     }
-    //     _ => (),
-    // }
+    match &model {
+        Model::Local { path } if !path.ends_with(".gguf") => {
+            Args::command()
+                .error(
+                    clap::error::ErrorKind::InvalidValue,
+                    "Model file should be in `gguf` format",
+                )
+                .exit();
+        }
+        _ => (),
+    }
 
     let ardupilot_file = match ardupilot_file {
         Some(file) if file.exists() => file,
@@ -79,11 +80,49 @@ async fn main() -> anyhow::Result<()> {
 
     setup_logger(log_level);
 
+    let llama_bin =
+        binary_location(&ullam_common::APP_DATA_DIR.join(ullam_common::llama::LLM_DATA_DIR));
+    if !llama_bin.exists() {
+        tracing::warn!("llama bin not found, downloading new");
+        ullam_common::llama::llm_download().await?
+    }
+
     let logs = ullam_parser::LogReader::new(File::open(ardupilot_file).unwrap());
 
     let processed = ullam_preprocessor::process(logs.into_iter().filter_map(|this| this.ok()));
 
-    serde_json::ser::to_writer_pretty(File::create("/home/ghuba/processed.json")?, &processed)?;
+    ullam_common::llama::llm_load(model.into()).await?;
+
+    let mut aggregation_results = Vec::with_capacity(processed.len());
+
+    for item in processed {
+        let aggregation_result =
+            ullam_common::llama::llm_generate::<ullam_llm::aggregate::FlightAggregation>(
+                ullam_llm::AGGREGATE_PROMPT,
+                &serde_json::to_string(&item).expect("cant fail"),
+            )
+            .await?;
+
+        aggregation_results.push(aggregation_result);
+    }
+
+    std::fs::write(
+        "/home/ghuba/debug.json",
+        serde_json::to_string_pretty(&aggregation_results).unwrap(),
+    )
+    .unwrap();
+
+    let analzye_result =
+        ullam_common::llama::llm_generate::<ullam_llm::aggregate::FlightAggregation>(
+            ullam_llm::AGGREGATE_PROMPT,
+            &serde_json::to_string(&aggregation_results).expect("cant fail"),
+        )
+        .await?;
+
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&analzye_result).expect("never fais")
+    );
 
     Ok(())
 }

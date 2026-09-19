@@ -17,5 +17,6 @@ clap_derive.workspace = true
 serde_json.workspace = true
 
 ullam-common.workspace = true
+ullam-llm.workspace = true
 ullam-parser.workspace = true
 ullam-preprocessor.workspace = true

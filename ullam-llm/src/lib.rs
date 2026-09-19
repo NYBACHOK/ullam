@@ -1,10 +1,5 @@
 pub mod aggregate;
 pub mod analysis;
 
-pub fn aggregate_schema() -> schemars::Schema {
-    schemars::schema_for!(aggregate::FlightAggregation)
-}
-
-pub fn analysis_schema() -> schemars::Schema {
-    schemars::schema_for!(analysis::FlightAnalysis)
-}
+pub const AGGREGATE_PROMPT: &str = include_str!("../../assets/aggregate_prompt");
+pub const ANALYZE_PROMPT: &str = include_str!("../../assets/analyze_prompt");

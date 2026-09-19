@@ -60,6 +60,7 @@ zip = "8.6"
 ullam-common = { path = "./ullam-common" }
 ullam-parser = { path = "./ullam-parser" }
 ullam-preprocessor = { path = "./ullam-preprocessor" }
+ullam-llm = { path = "./ullam-llm" }
 
 [workspace.lints.rust]
 rust_2018_idioms = "deny"

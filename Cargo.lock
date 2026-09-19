@@ -3158,6 +3158,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "ullam-common",
+ "ullam-llm",
  "ullam-parser",
  "ullam-preprocessor",
 ]
@@ -3173,6 +3174,7 @@ dependencies = [
  "futures-util",
  "hf-hub",
  "reqwest",
+ "schemars",
  "serde",
  "serde_json",
  "tar",

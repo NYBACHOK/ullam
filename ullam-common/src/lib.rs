@@ -1,8 +1,8 @@
-mod hf_progress_logger;
 use std::{path::PathBuf, sync::LazyLock};
 
 pub mod errors;
 mod gh_release_reader;
+mod hf_progress_logger;
 pub mod llama;
 
 pub static APP_DATA_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
