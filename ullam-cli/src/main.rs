@@ -1,4 +1,8 @@
-use std::{fs::File, path::PathBuf};
+use std::{
+    fs::File,
+    io::{self, Write},
+    path::PathBuf,
+};
 
 use anyhow::Context;
 use clap::CommandFactory;
@@ -120,11 +124,13 @@ async fn main() -> anyhow::Result<()> {
         .inspect_err(|e| tracing::error!(error = ?e, "failed to save intermediate representation"));
     }
 
+    let start_index = select_start_index(&processed)?;
     ullam_common::llama::llm_load(model.into()).await?;
 
-    let mut aggregation_results = Vec::with_capacity(processed.len());
+    let selected_processed = &processed[start_index..];
+    let mut aggregation_results = Vec::with_capacity(selected_processed.len());
 
-    for item in processed {
+    for item in selected_processed {
         let aggregation_result = ullam_common::llama::llm_generate::<
             ullam_llm::aggregate::FlightAggregation,
         >(ullam_llm::AGGREGATE_PROMPT, &item.to_string())
@@ -192,6 +198,45 @@ fn setup_logger(log_level: tracing::Level) {
     let registry = tracing_subscriber::registry().with(filter);
 
     registry.with(tracing_subscriber::fmt::layer()).init();
+}
+
+fn select_start_index(
+    processed: &[ullam_preprocessor::PreprocessedLogItem],
+) -> anyhow::Result<usize> {
+    if processed.is_empty() {
+        anyhow::bail!("no chunks were produced from the log file");
+    }
+
+    let start = processed
+        .first()
+        .expect("checked that processed is not empty");
+    let end = processed
+        .last()
+        .expect("checked that processed is not empty");
+    let end_timestamp = end.timestamp + end.duration;
+
+    println!(
+        "Processed {} chunks covering {:.3}s to {:.3}s.",
+        processed.len(),
+        start.timestamp.as_secs_f64(),
+        end_timestamp.as_secs_f64(),
+    );
+
+    loop {
+        print!(
+            "How many chunks should be skipped before analysis? [0-{}]: ",
+            processed.len() - 1
+        );
+        io::stdout().flush()?;
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+
+        match input.trim().parse::<usize>() {
+            Ok(index) if index < processed.len() => return Ok(index),
+            _ => println!("Please enter a number from 0 to {}.", processed.len() - 1),
+        }
+    }
 }
 
 fn default_log_level() -> tracing::Level {
