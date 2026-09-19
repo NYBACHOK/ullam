@@ -1,7 +1,8 @@
 use std::{fs::File, path::PathBuf};
 
+use anyhow::Context;
 use clap::CommandFactory;
-use ullam_common::llama::serve::binary_location;
+use ullam_common::{APP_DATA_DIR, llama::serve::binary_location};
 
 #[derive(clap_derive::Parser)]
 #[non_exhaustive]
@@ -9,6 +10,9 @@ struct Args {
     /// The path to the model
     #[command(subcommand)]
     model: Model,
+    /// Save intermediate reresentation of aggregation and preprocessing phazes
+    #[arg(long, required = false, global = true, default_value_t = false)]
+    save_intermediate: bool,
     #[arg(long, global = true, required = false, default_value_t = default_log_level())]
     log_level: tracing::Level,
     #[arg(short = 'i', long, global = true, required = false)]
@@ -53,6 +57,7 @@ async fn main() -> anyhow::Result<()> {
         log_level,
         ardupilot_file,
         model,
+        save_intermediate,
         ..
     } = <Args as clap::Parser>::parse();
 
@@ -87,35 +92,70 @@ async fn main() -> anyhow::Result<()> {
         ullam_common::llama::llm_download().await?
     }
 
-    let logs = ullam_parser::LogReader::new(File::open(ardupilot_file).unwrap());
+    let logs =
+        ullam_parser::LogReader::new(File::open(&ardupilot_file).context("opening logs file")?);
 
     let processed = ullam_preprocessor::process(logs.into_iter().filter_map(|this| this.ok()));
+
+    if save_intermediate {
+        let path = APP_DATA_DIR.join(
+            format!(
+                "preprocessing_result_for_{}_{}.json",
+                ardupilot_file.file_name().unwrap_or_default().display(),
+                time::UtcDateTime::now()
+            )
+            .replace(" ", "_"),
+        );
+
+        tracing::info!("saving preprocessing results into: {}", path.display());
+
+        let _ = std::fs::write(
+            path,
+            serde_json::to_string_pretty(&processed).expect("never fails"),
+        )
+        .inspect_err(|e| tracing::error!(error = ?e, "failed to save intermediate representation"));
+    }
 
     ullam_common::llama::llm_load(model.into()).await?;
 
     let mut aggregation_results = Vec::with_capacity(processed.len());
 
     for item in processed {
-        let aggregation_result =
-            ullam_common::llama::llm_generate::<ullam_llm::aggregate::FlightAggregation>(
-                ullam_llm::AGGREGATE_PROMPT,
-                &serde_json::to_string(&item).expect("cant fail"),
-            )
-            .await?;
+        let aggregation_result = ullam_common::llama::llm_generate::<
+            ullam_llm::aggregate::FlightAggregation,
+        >(ullam_llm::AGGREGATE_PROMPT, &item.to_string())
+        .await?;
 
         aggregation_results.push(aggregation_result);
     }
 
-    std::fs::write(
-        "/home/ghuba/debug.json",
-        serde_json::to_string_pretty(&aggregation_results).unwrap(),
-    )
-    .unwrap();
+    if save_intermediate {
+        let path = APP_DATA_DIR.join(
+            format!(
+                "aggregation_result_for_{}_{}.json",
+                ardupilot_file.file_name().unwrap_or_default().display(),
+                time::UtcDateTime::now()
+            )
+            .replace(" ", "_"),
+        );
+
+        tracing::info!("saving aggregation results into: {}", path.display());
+
+        let _ = std::fs::write(
+            path,
+            serde_json::to_string_pretty(&aggregation_results).expect("never fails"),
+        )
+        .inspect_err(|e| tracing::error!(error = ?e, "failed to save intermediate representation for aggregation"));
+    }
 
     let analzye_result =
         ullam_common::llama::llm_generate::<ullam_llm::aggregate::FlightAggregation>(
-            ullam_llm::AGGREGATE_PROMPT,
-            &serde_json::to_string(&aggregation_results).expect("cant fail"),
+            ullam_llm::ANALYZE_PROMPT,
+            &aggregation_results
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join("\n"),
         )
         .await?;
 

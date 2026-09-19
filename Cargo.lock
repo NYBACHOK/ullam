@@ -3154,6 +3154,7 @@ dependencies = [
  "clap",
  "clap_derive",
  "serde_json",
+ "time",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -3207,6 +3208,7 @@ name = "ullam-preprocessor"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "serde_json",
  "ullam-parser",
 ]
 

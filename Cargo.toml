@@ -43,6 +43,7 @@ async-openai = "0.42"
 dirs = "7.0"
 anyhow = "1.0"
 thiserror = "2.0"
+time = "0.3"
 
 # logging
 tracing = { version = "0.1", features = [] }

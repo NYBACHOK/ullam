@@ -197,7 +197,7 @@ async fn wait_until_ready(timeout: Duration) -> anyhow::Result<()> {
 
     while start.elapsed() < timeout {
         if LLM_HTTP_CLIENT.models().list().await.is_ok() {
-            tokio::time::sleep(Duration::from_secs(2)).await;
+            tokio::time::sleep(Duration::from_secs(6)).await;
 
             tracing::info!("LLM engine is fully loaded and accepting requests");
             return Ok(());
