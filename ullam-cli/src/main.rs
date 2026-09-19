@@ -128,9 +128,12 @@ async fn main() -> anyhow::Result<()> {
         let aggregation_result = ullam_common::llama::llm_generate::<
             ullam_llm::aggregate::FlightAggregation,
         >(ullam_llm::AGGREGATE_PROMPT, &item.to_string())
-        .await?;
+        .await;
 
-        aggregation_results.push(aggregation_result);
+        match aggregation_result {
+            Ok(v) => aggregation_results.push(v),
+            Err(e) => tracing::error!(error = ?e, "failed to process chunk, ignoring it"),
+        }
     }
 
     if save {
