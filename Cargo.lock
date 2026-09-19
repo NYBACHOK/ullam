@@ -3153,6 +3153,7 @@ dependencies = [
  "anyhow",
  "clap",
  "clap_derive",
+ "serde",
  "serde_json",
  "time",
  "tokio",

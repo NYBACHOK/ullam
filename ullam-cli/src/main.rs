@@ -10,9 +10,9 @@ struct Args {
     /// The path to the model
     #[command(subcommand)]
     model: Model,
-    /// Save intermediate reresentation of aggregation and preprocessing phazes
-    #[arg(long, required = false, global = true, default_value_t = false)]
-    save_intermediate: bool,
+    /// Save analyzing result into app dir
+    #[arg(short, long, required = false, global = true, default_value_t = false)]
+    save: bool,
     #[arg(long, global = true, required = false, default_value_t = default_log_level())]
     log_level: tracing::Level,
     #[arg(short = 'i', long, global = true, required = false)]
@@ -57,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
         log_level,
         ardupilot_file,
         model,
-        save_intermediate,
+        save,
         ..
     } = <Args as clap::Parser>::parse();
 
@@ -92,6 +92,12 @@ async fn main() -> anyhow::Result<()> {
         ullam_common::llama::llm_download().await?
     }
 
+    let dir = APP_DATA_DIR
+        .join(format!("analyze_resylts_{}", time::UtcDateTime::now()).replace(" ", "_"));
+    if save && !dir.exists() {
+        std::fs::create_dir_all(&dir)?;
+    }
+
     let config = get_pre_processing_config()?;
 
     let logs =
@@ -102,15 +108,8 @@ async fn main() -> anyhow::Result<()> {
         config,
     );
 
-    if save_intermediate {
-        let path = APP_DATA_DIR.join(
-            format!(
-                "preprocessing_result_for_{}_{}.json",
-                ardupilot_file.file_name().unwrap_or_default().display(),
-                time::UtcDateTime::now()
-            )
-            .replace(" ", "_"),
-        );
+    if save {
+        let path = dir.join("preprocessing.json");
 
         tracing::info!("saving preprocessing results into: {}", path.display());
 
@@ -134,15 +133,8 @@ async fn main() -> anyhow::Result<()> {
         aggregation_results.push(aggregation_result);
     }
 
-    if save_intermediate {
-        let path = APP_DATA_DIR.join(
-            format!(
-                "aggregation_result_for_{}_{}.json",
-                ardupilot_file.file_name().unwrap_or_default().display(),
-                time::UtcDateTime::now()
-            )
-            .replace(" ", "_"),
-        );
+    if save {
+        let path = dir.join("aggregation.json");
 
         tracing::info!("saving aggregation results into: {}", path.display());
 
@@ -150,7 +142,7 @@ async fn main() -> anyhow::Result<()> {
             path,
             serde_json::to_string_pretty(&aggregation_results).expect("never fails"),
         )
-        .inspect_err(|e| tracing::error!(error = ?e, "failed to save intermediate representation for aggregation"));
+        .inspect_err(|e| tracing::error!(error = ?e, "failed to save intermediate representation"));
     }
 
     let analzye_result =
@@ -163,6 +155,18 @@ async fn main() -> anyhow::Result<()> {
                 .join("\n"),
         )
         .await?;
+
+    if save {
+        let path = dir.join("analysis.json");
+
+        tracing::info!("saving analysis results into: {}", path.display());
+
+        let _ = std::fs::write(
+            path,
+            serde_json::to_string_pretty(&analzye_result).expect("never fails"),
+        )
+        .inspect_err(|e| tracing::error!(error = ?e, "failed to save intermediate representation"));
+    }
 
     println!(
         "{}",
