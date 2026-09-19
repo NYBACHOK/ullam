@@ -2,7 +2,7 @@ use std::{fs::File, path::PathBuf};
 
 use anyhow::Context;
 use clap::CommandFactory;
-use ullam_common::{APP_DATA_DIR, llama::serve::binary_location};
+use ullam_common::{APP_DATA_DIR, get_pre_processing_config, llama::serve::binary_location};
 
 #[derive(clap_derive::Parser)]
 #[non_exhaustive]
@@ -92,10 +92,15 @@ async fn main() -> anyhow::Result<()> {
         ullam_common::llama::llm_download().await?
     }
 
+    let config = get_pre_processing_config()?;
+
     let logs =
         ullam_parser::LogReader::new(File::open(&ardupilot_file).context("opening logs file")?);
 
-    let processed = ullam_preprocessor::process(logs.into_iter().filter_map(|this| this.ok()));
+    let processed = ullam_preprocessor::process_with_config(
+        logs.into_iter().filter_map(|this| this.ok()),
+        config,
+    );
 
     if save_intermediate {
         let path = APP_DATA_DIR.join(
