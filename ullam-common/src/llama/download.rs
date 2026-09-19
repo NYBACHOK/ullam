@@ -1,6 +1,5 @@
 use std::path::Path;
 
-#[cfg(any(target_os = "linux", target_os = "macos"))]
 use crate::errors::BetterIoError;
 use crate::gh_release_reader::DownloadError;
 
