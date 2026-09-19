@@ -1,4 +1,7 @@
-use super::*;
+use super::{
+    Duration, FieldValue, LogField, LogValue, MessageSchemaProvider, ParseError, TIME_US_LABEL,
+    default_parse,
+};
 
 /// Handles GPS messages (GPS, GPA, GRAW).
 pub struct GpsSchemaProvider;
@@ -23,7 +26,7 @@ impl MessageSchemaProvider for GpsSchemaProvider {
                 }
             }
             "Alt" | "Spd" | "HDop" | "VDop" => match value {
-                FieldValue::Float(val) => LogValue::F64(val as f64),
+                FieldValue::Float(val) => LogValue::F64(val),
                 FieldValue::Int(val) => LogValue::F64(val as f64),
                 _ => return Err(ParseError::InvalidLabelType { label, value }),
             },

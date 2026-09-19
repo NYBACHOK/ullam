@@ -23,7 +23,7 @@ pub trait MessageSchemaProvider: Send + Sync {
     /// Formats a specific field value based on the message context.
     ///
     /// # Arguments
-    /// * `label` - The field label (e.g., "Lat", "Roll", "TimeUS").
+    /// * `label` - The field label (e.g., "Lat", "Roll", "`TimeUS`").
     /// * `value` - The raw parsed value from the binary log.
     fn format_field(&self, label: String, value: FieldValue) -> Result<LogField, ParseError>;
 }
@@ -53,7 +53,7 @@ fn default_parse(value: FieldValue, label: &str) -> Result<LogValue, ParseError>
         _ => match value {
             FieldValue::Int(val) => LogValue::I64(val),
             FieldValue::Uint(val) => LogValue::U64(val),
-            FieldValue::Float(val) => LogValue::F64(val as f64),
+            FieldValue::Float(val) => LogValue::F64(val),
             FieldValue::String(val) => LogValue::String(val),
             FieldValue::Array(items) => LogValue::Array(items),
         },

@@ -89,11 +89,11 @@ async fn main() -> anyhow::Result<()> {
         binary_location(&ullam_common::APP_DATA_DIR.join(ullam_common::llama::LLM_DATA_DIR));
     if !llama_bin.exists() {
         tracing::warn!("llama bin not found, downloading new");
-        ullam_common::llama::llm_download().await?
+        ullam_common::llama::llm_download().await?;
     }
 
     let dir = APP_DATA_DIR
-        .join(format!("analyze_resylts_{}", time::UtcDateTime::now()).replace(" ", "_"));
+        .join(format!("analyze_resylts_{}", time::UtcDateTime::now()).replace(' ', "_"));
     if save && !dir.exists() {
         std::fs::create_dir_all(&dir)?;
     }
@@ -104,7 +104,7 @@ async fn main() -> anyhow::Result<()> {
         ullam_parser::LogReader::new(File::open(&ardupilot_file).context("opening logs file")?);
 
     let processed = ullam_preprocessor::process_with_config(
-        logs.into_iter().filter_map(|this| this.ok()),
+        logs.into_iter().filter_map(std::result::Result::ok),
         config,
     );
 
@@ -191,7 +191,7 @@ fn setup_logger(log_level: tracing::Level) {
 
     let registry = tracing_subscriber::registry().with(filter);
 
-    registry.with(tracing_subscriber::fmt::layer()).init()
+    registry.with(tracing_subscriber::fmt::layer()).init();
 }
 
 fn default_log_level() -> tracing::Level {

@@ -27,9 +27,10 @@ pub fn process_with_config(
         msg_with_ignored_fields,
     }: PreprocessorConfig,
 ) -> Vec<PreprocessedLogItem> {
-    if window_duration == Duration::ZERO {
-        panic!("config `window_duration` can't be ZERO")
-    }
+    assert!(
+        window_duration != Duration::ZERO,
+        "config `window_duration` can't be ZERO"
+    );
 
     utils::chunks_by_duration(source, window_duration, messages_to_ignore)
         .map(|this| {
@@ -58,7 +59,7 @@ fn process_chunk(
 
     source.into_iter().for_each(|msg| {
         if timestamp.is_none() {
-            timestamp = Some(msg.timestamp)
+            timestamp = Some(msg.timestamp);
         }
 
         let fields_to_ignore = msg_with_ignored_fields.get(&msg.name);
@@ -71,15 +72,14 @@ fn process_chunk(
             }
 
             if snapshoting_fields.contains(&field.name) {
-                let snapshoted_fields = match ir_snapshoted_fields.get_mut(&msg.name) {
-                    Some(val) => val,
-                    None => {
-                        ir_snapshoted_fields.insert(msg.name.to_owned(), Vec::new());
+                let snapshoted_fields = if let Some(val) = ir_snapshoted_fields.get_mut(&msg.name) {
+                    val
+                } else {
+                    ir_snapshoted_fields.insert(msg.name.clone(), Vec::new());
 
-                        ir_snapshoted_fields
-                            .get_mut(&msg.name)
-                            .expect("we inserted above")
-                    }
+                    ir_snapshoted_fields
+                        .get_mut(&msg.name)
+                        .expect("we inserted above")
                 };
 
                 let field_to_snapshot = (field.name, field.value);
@@ -91,31 +91,32 @@ fn process_chunk(
                 continue;
             }
 
-            let fields_and_accm = match ir_stats_accumulators.get_mut(&msg.name) {
-                Some(val) => val,
-                None => {
-                    ir_stats_accumulators.insert(msg.name.to_owned(), HashMap::new());
+            let fields_and_accm = if let Some(val) = ir_stats_accumulators.get_mut(&msg.name) {
+                val
+            } else {
+                ir_stats_accumulators.insert(msg.name.clone(), HashMap::new());
 
-                    ir_stats_accumulators
-                        .get_mut(&msg.name)
-                        .expect("we inserted above")
-                }
+                ir_stats_accumulators
+                    .get_mut(&msg.name)
+                    .expect("we inserted above")
             };
 
             let stats = if let Some(stats) = fields_and_accm.get_mut(&field.name) {
                 stats
             } else {
-                fields_and_accm.insert(field.name.to_owned(), StatsAccumulator::default());
+                fields_and_accm.insert(field.name.clone(), StatsAccumulator::default());
 
                 fields_and_accm
                     .get_mut(&field.name)
                     .expect("inserted above")
             };
 
-            let value = field.value.try_into_float().expect(&format!(
-                "tried to write string or array as number for {}",
-                field.name
-            ));
+            let value = field.value.try_into_float().unwrap_or_else(|| {
+                panic!(
+                    "tried to write string or array as number for {}",
+                    field.name
+                )
+            });
 
             stats.add(value);
         }

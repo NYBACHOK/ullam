@@ -70,7 +70,7 @@ impl<R: Read> LogReader<R> {
         let entry = LogEntry {
             id: raw_entry.msg_type,
             name: raw_entry.name,
-            timestamp: raw_entry.timestamp_usec.map(|us| Duration::from_micros(us)),
+            timestamp: raw_entry.timestamp_usec.map(Duration::from_micros),
             fields,
         };
 

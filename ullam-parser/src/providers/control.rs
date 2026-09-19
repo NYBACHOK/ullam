@@ -1,4 +1,7 @@
-use super::*;
+use super::{
+    Duration, FieldValue, LogField, LogValue, MessageSchemaProvider, ParseError, TIME_US_LABEL,
+    default_parse,
+};
 
 /// Handles Control/PID messages (PIDR, PIDP, CTUN, NTUN).
 pub struct ControlSchemaProvider;
@@ -20,7 +23,7 @@ impl MessageSchemaProvider for ControlSchemaProvider {
             // PID terms (P, I, D, FF) and Targets/Actuals are floats
             "Tar" | "Act" | "Err" | "P" | "I" | "D" | "FF" | "DFF" | "DesRoll" | "Roll"
             | "DesPitch" | "Pitch" | "DesYaw" | "Yaw" => match value {
-                FieldValue::Float(val) => LogValue::F64(val as f64),
+                FieldValue::Float(val) => LogValue::F64(val),
                 FieldValue::Int(val) => LogValue::F64(val as f64),
                 _ => return Err(ParseError::InvalidLabelType { label, value }),
             },

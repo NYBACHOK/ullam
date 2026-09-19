@@ -19,6 +19,7 @@ pub enum FlightPhase {
 }
 
 impl FlightPhase {
+    #[must_use]
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Stabilize => "STABILIZE",
@@ -93,7 +94,7 @@ impl std::fmt::Display for SnapshotIrRecord {
         for (field, value) in &self.fields {
             let value = serde_json::to_string(value).map_err(|_| std::fmt::Error)?;
 
-            writeln!(f, "  {}={}", field, value)?;
+            writeln!(f, "  {field}={value}")?;
         }
 
         Ok(())
@@ -105,7 +106,7 @@ impl std::fmt::Display for PreprocessedLogItem {
         let start = self.timestamp.as_secs_f64();
         let end = (self.timestamp + self.duration).as_secs_f64();
 
-        writeln!(f, "CHUNK {:.3}..{:.3}", start, end)?;
+        writeln!(f, "CHUNK {start:.3}..{end:.3}")?;
 
         for window in &self.windows {
             write!(f, "{window}")?;

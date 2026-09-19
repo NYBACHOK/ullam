@@ -35,6 +35,7 @@ pub enum LogValue {
 }
 
 impl LogValue {
+    #[must_use]
     pub fn try_into_float(self) -> Option<f64> {
         match self {
             LogValue::I64(value) => Some(value as f64),
@@ -43,9 +44,9 @@ impl LogValue {
             | LogValue::Altitude(value)
             | LogValue::ScaledI16(value)
             | LogValue::ScaledI32(value) => Some(value),
-            LogValue::Latitude(value) | LogValue::Longitude(value) => Some(value as f64),
+            LogValue::Latitude(value) | LogValue::Longitude(value) => Some(f64::from(value)),
             LogValue::Time(value) => Some(value.as_secs_f64()),
-            LogValue::FlightMode(value) => Some(value as f64),
+            LogValue::FlightMode(value) => Some(f64::from(value)),
             LogValue::Array(_) | LogValue::String(_) => None,
         }
     }

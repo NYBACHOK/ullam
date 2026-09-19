@@ -367,7 +367,7 @@ impl Display for Correlation {
 
 impl Display for Signal {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "SIGNAL {}.{}", self.message, self.field,)?;
+        write!(f, "SIGNAL {}.{}", self.message, self.field)?;
 
         if let Some(unit) = &self.unit {
             write!(f, " unit={unit}")?;

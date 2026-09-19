@@ -5,6 +5,7 @@ use tokio::process::Child;
 use crate::errors::BetterIoError;
 
 #[inline]
+#[must_use]
 pub fn binary_location(dir: &Path) -> std::path::PathBuf {
     #[cfg(target_family = "unix")]
     {

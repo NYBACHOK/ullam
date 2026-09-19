@@ -1,4 +1,7 @@
-use super::*;
+use super::{
+    Duration, FieldValue, LogField, LogValue, MessageSchemaProvider, ParseError, TIME_US_LABEL,
+    default_parse,
+};
 
 /// Handles EKF messages (NKF1-NKF5, XKF1-XKF5).
 /// Contains Lat/Lng, Velocities, Attitudes, and Innovation data.
@@ -20,13 +23,13 @@ impl MessageSchemaProvider for EkfSchemaProvider {
                 match value {
                     FieldValue::Int(val) => LogValue::Latitude(val as i32), // Simplified mapping
                     FieldValue::Uint(val) => LogValue::Longitude(val as i32),
-                    FieldValue::Float(val) => LogValue::F64(val as f64),
+                    FieldValue::Float(val) => LogValue::F64(val),
                     _ => return Err(ParseError::InvalidLabelType { label, value }),
                 }
             }
             // Velocity and Position errors
             "VN" | "VE" | "VD" | "IVN" | "IVE" | "IVD" | "RErr" | "ErSc" => match value {
-                FieldValue::Float(val) => LogValue::F64(val as f64),
+                FieldValue::Float(val) => LogValue::F64(val),
                 FieldValue::Int(val) => LogValue::F64(val as f64),
                 _ => return Err(ParseError::InvalidLabelType { label, value }),
             },

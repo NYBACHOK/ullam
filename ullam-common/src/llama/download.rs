@@ -59,7 +59,7 @@ pub async fn latest_release_url(
         }
     };
 
-    let release_assets = crate::gh_release_reader::release(&client, GH_RELEASE_LINK, true)
+    let release_assets = crate::gh_release_reader::release(client, GH_RELEASE_LINK, true)
         .await
         .map_err(|e| ArchiveDownloadError::Download(DownloadError::Other(e)))?
         .assets;
@@ -128,7 +128,7 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std::io::Result
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 fn unpack_archive(tar_location: &Path, target_dir: &Path) -> Result<(), BetterIoError> {
-    let file = std::fs::File::open(&tar_location).map_err(|error| BetterIoError {
+    let file = std::fs::File::open(tar_location).map_err(|error| BetterIoError {
         location: tar_location.to_path_buf(),
         context: "opening archive descriptor",
         error,
@@ -182,6 +182,5 @@ pub async fn is_nvidia() -> bool {
     }
     .wait()
     .await
-    .map(|this| this.success())
-    .unwrap_or_default()
+    .is_ok_and(|this| this.success())
 }

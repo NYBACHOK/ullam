@@ -52,16 +52,16 @@ pub enum Model {
 }
 
 pub async fn llm_download() -> anyhow::Result<()> {
-    let cache_dir = dirs::config_local_dir().unwrap_or_else(|| std::env::temp_dir());
+    let cache_dir = dirs::config_local_dir().unwrap_or_else(std::env::temp_dir);
     let target_dir = APP_DATA_DIR.join(LLM_DATA_DIR);
 
     create_dir_if_not_exists(&cache_dir)
         .await
-        .with_context(|| format!("failed to create cache dir: {:?}", cache_dir))?;
+        .with_context(|| format!("failed to create cache dir: {cache_dir:?}"))?;
 
     create_dir_if_not_exists(&target_dir)
         .await
-        .with_context(|| format!("failed to create target dir: {:?}", target_dir))?;
+        .with_context(|| format!("failed to create target dir: {target_dir:?}"))?;
 
     download::download(cache_dir, target_dir).await?;
 
@@ -117,7 +117,7 @@ pub async fn llm_generate<T: schemars::JsonSchema + serde::de::DeserializeOwned>
         json_schema: ResponseFormatJsonSchema {
             name: "flight_analysis".to_string(),
             description: Some("Evidence-based analysis of an ArduPilot flight log".to_string()),
-            schema: serde_json::to_value(&schemars::schema_for!(T)).expect("never fails"),
+            schema: serde_json::to_value(schemars::schema_for!(T)).expect("never fails"),
             strict: Some(true),
         },
     };
@@ -142,8 +142,7 @@ pub async fn llm_generate<T: schemars::JsonSchema + serde::de::DeserializeOwned>
     let msg = response
         .choices
         .pop()
-        .map(|c| c.message.content.clone())
-        .flatten()
+        .and_then(|c| c.message.content.clone())
         .ok_or_else(|| {
             anyhow::anyhow!("failed to retrieve any choice content from model response")
         })?;

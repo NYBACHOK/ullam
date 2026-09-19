@@ -40,15 +40,13 @@ impl ChunkProgressLogger {
 
 impl ProgressHandler for ChunkProgressLogger {
     fn on_progress(&self, event: &ProgressEvent) {
-        match event {
-            ProgressEvent::Download(DownloadEvent::AggregateProgress {
-                bytes_completed,
-                total_bytes,
-                ..
-            }) => {
-                self.check_and_log(*bytes_completed, *total_bytes, "Download");
-            }
-            _ => {}
+        if let ProgressEvent::Download(DownloadEvent::AggregateProgress {
+            bytes_completed,
+            total_bytes,
+            ..
+        }) = event
+        {
+            self.check_and_log(*bytes_completed, *total_bytes, "Download");
         }
     }
 }

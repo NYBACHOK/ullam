@@ -64,6 +64,7 @@ impl Default for PreprocessorConfig {
 }
 
 impl PreprocessorConfig {
+    #[must_use]
     pub fn window_duration_set(mut self, window_duration: Duration) -> Self {
         self.window_duration = window_duration;
         self

@@ -1,7 +1,7 @@
-use super::*;
+use super::{FieldValue, LogField, MessageSchemaProvider, ParseError, default_parse};
 
 /// Handles generic messages that don't have a specialized provider.
-/// Implements the MessageSchemaProvider trait to act as the default router/fallback.
+/// Implements the `MessageSchemaProvider` trait to act as the default router/fallback.
 pub struct CommonSchemaProvider;
 
 impl MessageSchemaProvider for CommonSchemaProvider {

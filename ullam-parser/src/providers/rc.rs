@@ -1,4 +1,4 @@
-use super::*;
+use super::{FieldValue, LogField, LogValue, MessageSchemaProvider, ParseError, default_parse};
 
 /// Handles RC Input/Output messages (RCIN, RCOU).
 pub struct RcSchemaProvider;
@@ -19,8 +19,8 @@ impl MessageSchemaProvider for RcSchemaProvider {
         let field_value = match label.as_str() {
             // RC channels are typically u16 (1000-2000)
             s if is_rc_channel(s) => match value {
-                FieldValue::Uint(val) => LogValue::U64(val as u64),
-                FieldValue::Int(val) => LogValue::I64(val as i64),
+                FieldValue::Uint(val) => LogValue::U64(val),
+                FieldValue::Int(val) => LogValue::I64(val),
                 _ => return Err(ParseError::InvalidLabelType { label, value }),
             },
             _ => default_parse(value, &label)?,

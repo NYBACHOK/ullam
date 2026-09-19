@@ -1,6 +1,9 @@
-use super::*;
+use super::{
+    Duration, FieldValue, LogField, LogValue, MessageSchemaProvider, ParseError, TIME_US_LABEL,
+    default_parse,
+};
 
-/// Handles IMU messages (msg_type 164).
+/// Handles IMU messages (`msg_type` 164).
 /// Format: TimeUS,I,GyrX,GyrY,GyrZ,AccX,AccY,AccZ,EG,EA,T,GH,AH,GHz,AHz
 pub struct ImuSchemaProvider;
 
@@ -18,7 +21,7 @@ impl MessageSchemaProvider for ImuSchemaProvider {
             // Gyro and Accelerometer values are typically Float32 in logs, stored as f64
             "GyrX" | "GyrY" | "GyrZ" | "AccX" | "AccY" | "AccZ" | "EG" | "EA" | "T" | "GH"
             | "AH" | "GHz" | "AHz" => match value {
-                FieldValue::Float(val) => LogValue::F64(val as f64),
+                FieldValue::Float(val) => LogValue::F64(val),
                 FieldValue::Int(val) => LogValue::F64(val as f64),
                 FieldValue::Uint(val) => LogValue::F64(val as f64),
                 _ => return Err(ParseError::InvalidLabelType { label, value }),

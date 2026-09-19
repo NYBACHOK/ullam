@@ -114,7 +114,7 @@ pub async fn release(
 
     let mut segments: Vec<String> = url
         .path_segments()
-        .map(|s| s.map(|s| s.to_string()).collect())
+        .map(|s| s.map(std::string::ToString::to_string).collect())
         .unwrap_or_default();
 
     while let Some(last) = segments.last() {
@@ -194,28 +194,25 @@ pub async fn download_file(
     })?;
 
     if is_exists {
-        match tokio::fs::metadata(&location).await {
-            Ok(meta) => {
-                const LOG_MESSAGE: &str =
-                    "Existing download with matching size found. Ignoring download";
+        if let Ok(meta) = tokio::fs::metadata(&location).await {
+            const LOG_MESSAGE: &str =
+                "Existing download with matching size found. Ignoring download";
 
-                #[cfg(target_family = "unix")]
-                {
-                    use std::os::unix::fs::MetadataExt;
+            #[cfg(target_family = "unix")]
+            {
+                use std::os::unix::fs::MetadataExt;
 
-                    if meta.size() == total_size {
-                        tracing::warn!("{LOG_MESSAGE}");
-                    }
-                }
-
-                #[cfg(target_family = "windows")]
-                if meta.len() == total_size {
+                if meta.size() == total_size {
                     tracing::warn!("{LOG_MESSAGE}");
                 }
-
-                return Ok(());
             }
-            _ => (),
+
+            #[cfg(target_family = "windows")]
+            if meta.len() == total_size {
+                tracing::warn!("{LOG_MESSAGE}");
+            }
+
+            return Ok(());
         }
     }
 
@@ -239,7 +236,7 @@ pub async fn download_file(
         downloaded += chunk.len() as u64;
 
         // Print progress every 1MB
-        if downloaded % (1024 * 1024) == 0 || downloaded == total_size {
+        if downloaded.is_multiple_of(1024 * 1024) || downloaded == total_size {
             let elapsed = start_time.elapsed().as_secs_f64();
             let speed = downloaded as f64 / elapsed / 1024.0 / 1024.0; // MB/s
             let progress = if total_size > 0 {
