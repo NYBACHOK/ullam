@@ -148,7 +148,7 @@ async fn main() -> anyhow::Result<()> {
         .inspect_err(|e| tracing::error!(error = ?e, "failed to save intermediate representation"));
     }
 
-    let analzye_result =
+    let analyze_result =
         ullam_common::llama::llm_generate::<ullam_llm::aggregate::FlightAggregation>(
             ullam_llm::ANALYZE_PROMPT,
             &aggregation_results
@@ -166,15 +166,12 @@ async fn main() -> anyhow::Result<()> {
 
         let _ = std::fs::write(
             path,
-            serde_json::to_string_pretty(&analzye_result).expect("never fails"),
+            serde_json::to_string_pretty(&analyze_result).expect("never fails"),
         )
         .inspect_err(|e| tracing::error!(error = ?e, "failed to save intermediate representation"));
     }
 
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&analzye_result).expect("never fais")
-    );
+    println!("{}", analyze_result);
 
     Ok(())
 }
