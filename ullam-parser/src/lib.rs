@@ -10,9 +10,13 @@ pub use self::{providers::*, types::*};
 #[derive(Debug, thiserror::Error)]
 pub enum ParseError {
     #[error(
-        "schema provider found invalid relation to field label({label}) and its value: {value:#?}"
+        "schema provider for {message} found invalid relation to field label({label}) and its value: {value:#?}"
     )]
-    InvalidLabelType { label: String, value: FieldValue },
+    InvalidLabelType {
+        label: String,
+        value: FieldValue,
+        message: String,
+    },
     #[error(transparent)]
     Binlog(#[from] ardupilot_binlog::BinlogError),
 }
@@ -60,10 +64,11 @@ impl<R: Read> LogReader<R> {
         let mut fields = Vec::new();
 
         for (label, value) in raw_entry.labels().iter().zip(raw_entry.values().iter()) {
-            let formatted_field = match provider.format_field(label.clone(), value.clone()) {
-                Ok(f) => f,
-                Err(e) => return Some(Err(e)),
-            };
+            let formatted_field =
+                match provider.format_field(&raw_entry.name, label.clone(), value.clone()) {
+                    Ok(f) => f,
+                    Err(e) => return Some(Err(e)),
+                };
             fields.push(formatted_field);
         }
 

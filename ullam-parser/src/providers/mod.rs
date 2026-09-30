@@ -25,11 +25,16 @@ pub trait MessageSchemaProvider: Send + Sync {
     /// # Arguments
     /// * `label` - The field label (e.g., "Lat", "Roll", "`TimeUS`").
     /// * `value` - The raw parsed value from the binary log.
-    fn format_field(&self, label: String, value: FieldValue) -> Result<LogField, ParseError>;
+    fn format_field(
+        &self,
+        msg_name: &str,
+        label: String,
+        value: FieldValue,
+    ) -> Result<LogField, ParseError>;
 }
 
 /// Helper function for default parsing of unknown fields.
-fn default_parse(value: FieldValue, label: &str) -> Result<LogValue, ParseError> {
+fn default_parse(msg_name: &str, value: FieldValue, label: &str) -> Result<LogValue, ParseError> {
     let value = match label {
         TIME_US_LABEL => match value {
             FieldValue::Uint(val) => LogValue::Time(Duration::from_micros(val)),
@@ -37,6 +42,7 @@ fn default_parse(value: FieldValue, label: &str) -> Result<LogValue, ParseError>
                 return Err(ParseError::InvalidLabelType {
                     label: label.to_owned(),
                     value,
+                    message: msg_name.to_owned(),
                 });
             }
         },
@@ -47,6 +53,7 @@ fn default_parse(value: FieldValue, label: &str) -> Result<LogValue, ParseError>
                 return Err(ParseError::InvalidLabelType {
                     label: label.to_owned(),
                     value,
+                    message: msg_name.to_owned(),
                 });
             }
         },

@@ -67,8 +67,12 @@ pub struct SnapshotIrRecord {
 pub struct PreprocessedLogItem {
     pub timestamp: Duration,
     pub duration: Duration,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub windows: Vec<WindowIrRecord>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub snapshots: Vec<SnapshotIrRecord>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub messages: Vec<String>,
 }
 
 impl std::fmt::Display for WindowIrRecord {

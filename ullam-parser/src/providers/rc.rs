@@ -8,7 +8,12 @@ impl MessageSchemaProvider for RcSchemaProvider {
         msg_name == "RCIN" || msg_name == "RCOU" || msg_name == "RCI2" || msg_name == "RCO2"
     }
 
-    fn format_field(&self, label: String, value: FieldValue) -> Result<LogField, ParseError> {
+    fn format_field(
+        &self,
+        msg_name: &str,
+        label: String,
+        value: FieldValue,
+    ) -> Result<LogField, ParseError> {
         fn is_rc_channel(label: &str) -> bool {
             let Some(num_part) = label.strip_prefix('C') else {
                 return false;
@@ -21,9 +26,15 @@ impl MessageSchemaProvider for RcSchemaProvider {
             s if is_rc_channel(s) => match value {
                 FieldValue::Uint(val) => LogValue::U64(val),
                 FieldValue::Int(val) => LogValue::I64(val),
-                _ => return Err(ParseError::InvalidLabelType { label, value }),
+                _ => {
+                    return Err(ParseError::InvalidLabelType {
+                        label,
+                        value,
+                        message: msg_name.to_owned(),
+                    });
+                }
             },
-            _ => default_parse(value, &label)?,
+            _ => default_parse(msg_name, value, &label)?,
         };
 
         Ok(LogField {

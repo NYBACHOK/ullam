@@ -10,9 +10,14 @@ impl MessageSchemaProvider for CommonSchemaProvider {
         true
     }
 
-    fn format_field(&self, label: String, value: FieldValue) -> Result<LogField, ParseError> {
+    fn format_field(
+        &self,
+        msg_name: &str,
+        label: String,
+        value: FieldValue,
+    ) -> Result<LogField, ParseError> {
         let field_value = match label.as_str() {
-            _ => default_parse(value, &label)?,
+            _ => default_parse(msg_name, value, &label)?,
         };
 
         Ok(LogField {
