@@ -28,11 +28,7 @@ pub static APP_DATA_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
         }
     }
 
-    data_dir().join(if cfg!(debug_assertions) {
-        "ullam/debug"
-    } else {
-        BUNDLE_ID
-    })
+    data_dir().join(BUNDLE_ID)
 });
 
 pub fn get_pre_processing_config() -> anyhow::Result<ullam_preprocessor::PreprocessorConfig> {
