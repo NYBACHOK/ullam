@@ -36,6 +36,7 @@ impl<R: Read> LogReader<R> {
         providers.push(Box::new(GpsSchemaProvider));
         providers.push(Box::new(ControlSchemaProvider));
         providers.push(Box::new(RcSchemaProvider));
+        providers.push(Box::new(IFloatingSchemaProvider));
 
         // Register the fallback parser last
         providers.push(Box::new(CommonSchemaProvider));

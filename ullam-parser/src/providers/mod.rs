@@ -10,8 +10,9 @@ mod ekf;
 mod gps;
 mod imu;
 mod rc;
+mod i_floating;
 
-pub use self::{common::*, control::*, ekf::*, gps::*, imu::*, rc::*};
+pub use self::{common::*, control::*, ekf::*, gps::*, imu::*, rc::*, i_floating::*};
 
 const TIME_US_LABEL: &str = "TimeUS";
 
