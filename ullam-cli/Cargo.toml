@@ -22,3 +22,7 @@ ullam-common.workspace = true
 ullam-llm.workspace = true
 ullam-parser.workspace = true
 ullam-preprocessor.workspace = true
+
+[[bin]]
+name = "ullam"
+path = "src/bin/main.rs"

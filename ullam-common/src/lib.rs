@@ -1,5 +1,7 @@
 use std::{path::PathBuf, sync::LazyLock};
 
+use anyhow::Context;
+
 pub mod errors;
 mod gh_release_reader;
 mod hf_progress_logger;
@@ -34,6 +36,10 @@ pub static APP_DATA_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
 });
 
 pub fn get_pre_processing_config() -> anyhow::Result<ullam_preprocessor::PreprocessorConfig> {
+    if !APP_DATA_DIR.exists() {
+        std::fs::create_dir_all(&*APP_DATA_DIR).context("failed to create app data dir")?;
+    }
+
     let config_path = APP_DATA_DIR.join("config.json");
     if config_path.exists() {
         let config = serde_json::from_slice(&std::fs::read(config_path)?)?;

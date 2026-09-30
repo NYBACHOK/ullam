@@ -26,7 +26,8 @@ impl Default for PreprocessorConfig {
         Self {
             window_duration: Duration::from_secs(20),
             messages_to_ignore: [
-                "FMT", "FMTU", "FMU", "UNIT", "MULT", "FILE", "MSG", "VER", "GPS", "PARM",
+                "FMT", "FMTU", "FMU", "UNIT", "MULT", "FILE", "MSG", "VER", "GPS", "PARM", "STAK",
+                "PIDP",
             ]
             .into_iter()
             .map(str::to_owned)
