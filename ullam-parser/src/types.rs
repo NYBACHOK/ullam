@@ -50,4 +50,21 @@ impl LogValue {
             LogValue::Array(_) | LogValue::String(_) => None,
         }
     }
+
+    pub fn try_into_string(self) -> Option<String> {
+        let val = match self {
+            LogValue::I64(value) => value.to_string(),
+            LogValue::U64(value) => value.to_string(),
+            LogValue::F64(value)
+            | LogValue::Altitude(value)
+            | LogValue::ScaledI16(value)
+            | LogValue::ScaledI32(value) => value.to_string(),
+            LogValue::Latitude(value) | LogValue::Longitude(value) => value.to_string(),
+            LogValue::FlightMode(value) => value.to_string(),
+            LogValue::String(value) => value,
+            LogValue::Array(_) | LogValue::Time(_) => return None,
+        };
+
+        return Some(val);
+    }
 }

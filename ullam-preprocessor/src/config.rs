@@ -17,8 +17,24 @@ pub struct PreprocessorConfig {
     pub ignore_fields: HashSet<String>,
     /// Messages that have fields which should be ignored
     pub msg_with_ignored_fields: HashMap<String, HashSet<String>>,
-    // pub flight_mode_field: String,
-    // pub flight_modes: BTreeMap<u8, FlightPhase>,
+    /// Message with mavlink messages
+    pub mavlink_messages: MavlinkMessagesConfig,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct MavlinkMessagesConfig {
+    pub name: String,
+    pub field_name: String,
+}
+
+impl Default for MavlinkMessagesConfig {
+    fn default() -> Self {
+        Self {
+            name: "MSG".to_owned(),
+            field_name: "Message".to_owned(),
+        }
+    }
 }
 
 impl Default for PreprocessorConfig {
@@ -26,8 +42,7 @@ impl Default for PreprocessorConfig {
         Self {
             window_duration: Duration::from_secs(20),
             messages_to_ignore: [
-                "FMT", "FMTU", "FMU", "UNIT", "MULT", "FILE", "MSG", "VER", "GPS", "PARM", "STAK",
-                "PIDP",
+                "FMT", "FMTU", "FMU", "UNIT", "MULT", "FILE", "VER", "GPS", "PARM", "STAK", "PIDP",
             ]
             .into_iter()
             .map(str::to_owned)
@@ -52,14 +67,7 @@ impl Default for PreprocessorConfig {
                     )
                 })
                 .collect(),
-            // flight_mode_field: "Mode".to_owned(),
-            // flight_modes: BTreeMap::from([
-            //     (0, FlightPhase::Stabilize),
-            //     (1, FlightPhase::Stabilize),
-            //     (5, FlightPhase::Loiter),
-            //     (6, FlightPhase::Rtl),
-            //     (14, FlightPhase::Flip),
-            // ]),
+            mavlink_messages: Default::default(),
         }
     }
 }

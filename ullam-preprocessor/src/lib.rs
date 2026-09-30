@@ -25,6 +25,7 @@ pub fn process_with_config(
         snapshoting_fields,
         ignore_fields,
         msg_with_ignored_fields,
+        mavlink_messages,
     }: PreprocessorConfig,
 ) -> Vec<PreprocessedLogItem> {
     assert!(
@@ -40,6 +41,7 @@ pub fn process_with_config(
                 &snapshoting_fields,
                 &ignore_fields,
                 &msg_with_ignored_fields,
+                &mavlink_messages,
             )
         })
         .collect()
@@ -51,15 +53,29 @@ fn process_chunk(
     snapshoting_fields: &HashSet<String>,
     ignore_fields: &HashSet<String>,
     msg_with_ignored_fields: &HashMap<String, HashSet<String>>,
+    mavlink_messages: &MavlinkMessagesConfig,
 ) -> PreprocessedLogItem {
     let mut timestamp = None;
 
     let mut ir_snapshoted_fields = HashMap::<String, Vec<(String, LogValue)>>::new();
     let mut ir_stats_accumulators = HashMap::<String, HashMap<String, StatsAccumulator>>::new();
+    let mut messages = Vec::new();
 
     source.into_iter().for_each(|msg| {
-        if timestamp.is_none() {
+        if timestamp.is_none() && msg.timestamp.is_some() {
             timestamp = Some(msg.timestamp);
+        }
+
+        if msg.name == mavlink_messages.name {
+            if let Some(msg) = msg
+                .fields
+                .into_iter()
+                .find(|this| this.name == mavlink_messages.field_name)
+            {
+                messages.push(msg.value.try_into_string().unwrap_or_default());
+            }
+
+            return;
         }
 
         let fields_to_ignore = msg_with_ignored_fields.get(&msg.name);
@@ -142,5 +158,6 @@ fn process_chunk(
                 fields,
             })
             .collect(),
+        messages,
     }
 }
