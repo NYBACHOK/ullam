@@ -4,6 +4,8 @@ use std::time::Duration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use crate::skip_serializing_if_f64;
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct FlightAggregation {
     pub schema_version: String,
@@ -20,7 +22,9 @@ pub struct FlightAggregation {
 pub struct FlightInfo {
     pub start_time: f64,
     pub duration: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub vehicle_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub firmware: Option<String>,
 }
 
@@ -35,7 +39,9 @@ pub struct FlightPhase {
     #[serde(rename = "type")]
     pub phase_type: PhaseType,
     pub time_range: TimeRange,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mode: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub evidence: Vec<String>,
 }
 
@@ -60,6 +66,7 @@ pub struct Event {
     pub event_type: String,
     pub description: String,
     pub severity: Severity,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub evidence: Vec<String>,
 }
 
@@ -76,6 +83,7 @@ pub struct Observation {
     pub time_range: TimeRange,
     pub category: ObservationCategory,
     pub description: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub evidence: Vec<String>,
 }
 
@@ -102,9 +110,12 @@ pub struct Correlation {
     pub input: String,
     pub response: String,
     pub relationship: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub lag_seconds: Option<f64>,
     /// Correlation coefficient, normally [-1, 1].
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strength: Option<f64>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub evidence: Vec<String>,
 }
 
@@ -112,13 +123,20 @@ pub struct Correlation {
 pub struct Signal {
     pub message: String,
     pub field: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[serde(skip_serializing_if = "skip_serializing_if_f64")]
     pub min: f64,
+    #[serde(skip_serializing_if = "skip_serializing_if_f64")]
     pub max: f64,
+    #[serde(skip_serializing_if = "skip_serializing_if_f64")]
     pub mean: f64,
+    #[serde(skip_serializing_if = "skip_serializing_if_f64")]
     pub stddev: f64,
     pub count: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub first: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub last: Option<f64>,
 }
 

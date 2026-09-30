@@ -32,13 +32,22 @@ impl FlightPhase {
     }
 }
 
+fn skip_serializing_if_f64(val: &f64) -> bool {
+    !val.is_normal() || *val == 0.0
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct NumericStats {
+    #[serde(skip_serializing_if = "skip_serializing_if_f64")]
     pub min: f64,
+    #[serde(skip_serializing_if = "skip_serializing_if_f64")]
     pub max: f64,
+    #[serde(skip_serializing_if = "skip_serializing_if_f64")]
     pub mean: f64,
+    #[serde(skip_serializing_if = "skip_serializing_if_f64")]
     pub stddev: f64,
     pub count: usize,
+    #[serde(skip_serializing_if = "skip_serializing_if_f64")]
     pub oscillation_index: f64,
 }
 

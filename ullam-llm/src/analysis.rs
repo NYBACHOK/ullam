@@ -19,7 +19,9 @@ pub struct TerminationAnalysis {
     pub assessment: String,
     /// Confidence in the explanation, not statistical probability.
     pub confidence: u8,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub causal_chain: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub evidence: Vec<Evidence>,
 }
 
@@ -28,7 +30,9 @@ pub struct Hypothesis {
     pub hypothesis: String,
     /// Confidence in this hypothesis based on available evidence.
     pub confidence: u8,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub supporting_evidence: Vec<Evidence>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub contradicting_evidence: Vec<Evidence>,
 }
 
@@ -36,6 +40,7 @@ pub struct Hypothesis {
 pub struct Evidence {
     pub claim: String,
     pub source: EvidenceSource,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<f64>,
     pub strength: EvidenceStrength,
 }
@@ -43,8 +48,11 @@ pub struct Evidence {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct EvidenceSource {
     pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub field: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<f64>,
 }
 
@@ -61,8 +69,11 @@ pub struct Issue {
     pub issue: String,
     pub importance: IssueImportance,
     pub description: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub evidence: Vec<Evidence>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub recommended_investigation: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub causal_relevance: Option<CausalRelevance>,
 }
 
