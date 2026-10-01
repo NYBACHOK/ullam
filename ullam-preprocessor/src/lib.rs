@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    time::Duration,
-};
+use std::{collections::HashMap, time::Duration};
 
 use ullam_parser::{LogEntry, LogValue};
 
@@ -9,7 +6,7 @@ mod config;
 mod types;
 mod utils;
 
-use crate::utils::StatsAccumulator;
+use crate::utils::{HashMapExt, StatsAccumulator};
 
 pub use self::{config::*, types::*};
 
@@ -21,11 +18,7 @@ pub fn process_with_config(
     source: impl IntoIterator<Item = LogEntry>,
     PreprocessorConfig {
         window_duration,
-        messages_to_ignore,
-        snapshoting_fields,
-        ignore_fields,
-        msg_with_ignored_fields,
-        mavlink_messages,
+        messages,
     }: PreprocessorConfig,
 ) -> Vec<PreprocessedLogItem> {
     assert!(
@@ -33,112 +26,89 @@ pub fn process_with_config(
         "config `window_duration` can't be ZERO"
     );
 
-    utils::chunks_by_duration(source, window_duration, messages_to_ignore)
-        .map(|this| {
-            process_chunk(
-                this,
-                window_duration,
-                &snapshoting_fields,
-                &ignore_fields,
-                &msg_with_ignored_fields,
-                &mavlink_messages,
-            )
-        })
+    utils::chunks_by_duration(source, window_duration)
+        .filter_map(|this| process_chunk(this, window_duration, &messages))
         .collect()
 }
 
 fn process_chunk(
     source: Vec<LogEntry>,
     duration: Duration,
-    snapshoting_fields: &HashSet<String>,
-    ignore_fields: &HashSet<String>,
-    msg_with_ignored_fields: &HashMap<String, HashSet<String>>,
-    mavlink_messages: &MavlinkMessagesConfig,
-) -> PreprocessedLogItem {
+    messages: &HashMap<String, MessageConfig>,
+) -> Option<PreprocessedLogItem> {
     let mut timestamp = None;
 
+    let mut ir_events = Vec::new();
     let mut ir_snapshoted_fields = HashMap::<String, Vec<(String, LogValue)>>::new();
     let mut ir_stats_accumulators = HashMap::<String, HashMap<String, StatsAccumulator>>::new();
-    let mut messages = Vec::new();
+    let mut ir_count_msg = HashMap::<String, u64>::new();
 
-    source.into_iter().for_each(|msg| {
-        if timestamp.is_none() && msg.timestamp.is_some() {
-            timestamp = Some(msg.timestamp);
-        }
+    source
+        .into_iter()
+        .filter_map(|this| match messages.get(&this.name) {
+            Some(cfg) => Some((this, cfg)),
+            None => None,
+        })
+        .for_each(|(log_entry, msg_cfg)| {
+            if timestamp.is_none() && log_entry.timestamp.is_some() {
+                timestamp = Some(log_entry.timestamp);
+            }
 
-        if msg.name == mavlink_messages.name {
-            if let Some(msg) = msg
+            log_entry
                 .fields
                 .into_iter()
-                .find(|this| this.name == mavlink_messages.field_name)
-            {
-                messages.push(msg.value.try_into_string().unwrap_or_default());
-            }
+                .filter_map(|this| match msg_cfg.fields.get(&this.name) {
+                    Some(field_cfg) => Some((this, field_cfg)),
+                    None => None,
+                })
+                .for_each(|(log_field, field_cfg)| match field_cfg.mode {
+                    FieldMode::Ignore => return,
+                    FieldMode::Event => {
+                        if let Some(value) = log_field.value.try_into_string() {
+                            ir_events.push(value);
+                        }
+                    }
+                    FieldMode::Snapshot => {
+                        let snapshoted_fields =
+                            ir_snapshoted_fields.get_mut_or_insert_default(&log_entry.name);
 
-            return;
-        }
+                        let field_to_snapshot = (log_field.name, log_field.value);
 
-        let fields_to_ignore = msg_with_ignored_fields.get(&msg.name);
+                        if !snapshoted_fields.contains(&field_to_snapshot) {
+                            snapshoted_fields.push(field_to_snapshot);
+                        }
+                    }
+                    FieldMode::Stats => {
+                        let fields_stats =
+                            ir_stats_accumulators.get_mut_or_insert_default(&log_entry.name);
 
-        for field in msg.fields {
-            if ignore_fields.contains(&field.name)
-                || fields_to_ignore.is_some_and(|this| this.contains(&field.name))
-            {
-                continue;
-            }
+                        let stats = fields_stats.get_mut_or_insert_default(&log_field.name);
 
-            if snapshoting_fields.contains(&field.name) {
-                let snapshoted_fields = if let Some(val) = ir_snapshoted_fields.get_mut(&msg.name) {
-                    val
-                } else {
-                    ir_snapshoted_fields.insert(msg.name.clone(), Vec::new());
+                        let value = log_field.value.try_into_float().unwrap_or_else(|| {
+                            panic!(
+                                "tried to write string or array as number for {}",
+                                log_field.name
+                            )
+                        });
 
-                    ir_snapshoted_fields
-                        .get_mut(&msg.name)
-                        .expect("we inserted above")
-                };
+                        stats.add(value);
+                    }
+                    FieldMode::Counter => {
+                        let count = ir_count_msg.get_mut_or_insert_default(&log_entry.name);
+                        *count += 1;
+                    }
+                });
+        });
 
-                let field_to_snapshot = (field.name, field.value);
+    if ir_events.is_empty()
+        && ir_count_msg.is_empty()
+        && ir_snapshoted_fields.is_empty()
+        && ir_stats_accumulators.is_empty()
+    {
+        return None;
+    }
 
-                if !snapshoted_fields.contains(&field_to_snapshot) {
-                    snapshoted_fields.push(field_to_snapshot);
-                }
-
-                continue;
-            }
-
-            let fields_and_accm = if let Some(val) = ir_stats_accumulators.get_mut(&msg.name) {
-                val
-            } else {
-                ir_stats_accumulators.insert(msg.name.clone(), HashMap::new());
-
-                ir_stats_accumulators
-                    .get_mut(&msg.name)
-                    .expect("we inserted above")
-            };
-
-            let stats = if let Some(stats) = fields_and_accm.get_mut(&field.name) {
-                stats
-            } else {
-                fields_and_accm.insert(field.name.clone(), StatsAccumulator::default());
-
-                fields_and_accm
-                    .get_mut(&field.name)
-                    .expect("inserted above")
-            };
-
-            let value = field.value.try_into_float().unwrap_or_else(|| {
-                panic!(
-                    "tried to write string or array as number for {}",
-                    field.name
-                )
-            });
-
-            stats.add(value);
-        }
-    });
-
-    PreprocessedLogItem {
+    Some(PreprocessedLogItem {
         timestamp: timestamp.flatten().unwrap_or_default(),
         duration,
         windows: ir_stats_accumulators
@@ -158,6 +128,7 @@ fn process_chunk(
                 fields,
             })
             .collect(),
-        messages,
-    }
+        messages: ir_events,
+        count: ir_count_msg,
+    })
 }

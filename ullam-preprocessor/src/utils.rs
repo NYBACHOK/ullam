@@ -1,13 +1,9 @@
-use std::{collections::HashSet, time::Duration};
+use std::{collections::HashMap, hash::Hash, time::Duration};
 use ullam_parser::LogEntry;
 
 use crate::NumericStats;
 
-pub fn chunks_by_duration<I>(
-    iter: I,
-    window: Duration,
-    msg_to_ignore: HashSet<String>,
-) -> impl Iterator<Item = Vec<LogEntry>>
+pub fn chunks_by_duration<I>(iter: I, window: Duration) -> impl Iterator<Item = Vec<LogEntry>>
 where
     I: IntoIterator<Item = LogEntry>,
 {
@@ -18,11 +14,13 @@ where
     std::iter::from_fn(move || {
         loop {
             match iter.next() {
-                Some(item) if msg_to_ignore.contains(&item.name) => continue,
                 Some(item) => {
-                    let ts = item
-                        .timestamp
-                        .expect("all messages without timestamp should be filtered out");
+                    let ts = if let Some(ts) = item.timestamp {
+                        ts
+                    } else {
+                        continue;
+                    };
+
                     match start_ts {
                         None => {
                             start_ts = Some(ts);
@@ -86,12 +84,20 @@ impl StatsAccumulator {
             max: self.max,
             mean: self.mean,
             stddev,
-            count: self.count,
-            oscillation_index: if self.mean.abs() < f64::EPSILON {
-                stddev
-            } else {
-                stddev / self.mean.abs()
-            },
         }
+    }
+}
+
+pub trait HashMapExt<K, V> {
+    fn get_mut_or_insert_default(&mut self, key: &K) -> &mut V;
+}
+
+impl<K: Clone + Eq + Hash, V: Default> HashMapExt<K, V> for HashMap<K, V> {
+    fn get_mut_or_insert_default(&mut self, key: &K) -> &mut V {
+        if !self.contains_key(key) {
+            self.insert(key.clone(), Default::default());
+        }
+
+        self.get_mut(key).expect("we inserted above")
     }
 }

@@ -46,9 +46,6 @@ pub struct NumericStats {
     pub mean: f64,
     #[serde(skip_serializing_if = "skip_serializing_if_f64")]
     pub stddev: f64,
-    pub count: usize,
-    #[serde(skip_serializing_if = "skip_serializing_if_f64")]
-    pub oscillation_index: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -73,6 +70,8 @@ pub struct PreprocessedLogItem {
     pub snapshots: Vec<SnapshotIrRecord>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub messages: Vec<String>,
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
+    pub count: HashMap<String, u64>,
 }
 
 impl std::fmt::Display for WindowIrRecord {
@@ -85,14 +84,8 @@ impl std::fmt::Display for WindowIrRecord {
         for (field, stats) in fields {
             writeln!(
                 f,
-                "  {} {:.6}..{:.6} μ={:.6} o={:.6} n={} osc={:.6}",
-                field,
-                stats.min,
-                stats.max,
-                stats.mean,
-                stats.stddev,
-                stats.count,
-                stats.oscillation_index,
+                "  {} {:.6}..{:.6} μ={:.6} o={:.6}",
+                field, stats.min, stats.max, stats.mean, stats.stddev,
             )?;
         }
 

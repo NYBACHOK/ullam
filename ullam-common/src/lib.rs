@@ -38,8 +38,15 @@ pub fn get_pre_processing_config() -> anyhow::Result<ullam_preprocessor::Preproc
 
     let config_path = APP_DATA_DIR.join("config.json");
     if config_path.exists() {
-        let config = serde_json::from_slice(&std::fs::read(config_path)?)?;
-        return Ok(config);
+        if let Ok(config) = serde_json::from_slice::<ullam_preprocessor::PreprocessorConfig>(
+            &std::fs::read(&config_path)?,
+        ) {
+            return Ok(config);
+        } else {
+            tracing::warn!("old config file is invalid, using default");
+
+            return Ok(ullam_preprocessor::PreprocessorConfig::default());
+        }
     }
 
     let config = ullam_preprocessor::PreprocessorConfig::default();
