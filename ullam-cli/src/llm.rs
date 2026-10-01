@@ -1,4 +1,4 @@
-use std::{fs::File, io::Write, path::PathBuf};
+use std::{fs::File, path::PathBuf};
 
 use anyhow::Context;
 use clap::CommandFactory;
@@ -54,23 +54,18 @@ pub async fn process(model: Model, ardupilot_file: PathBuf, save: bool) -> anyho
         .inspect_err(|e| tracing::error!(error = ?e, "failed to save intermediate representation"));
     }
 
-    let start_index = select_start_index(&processed)?;
     ullam_common::llama::llm_load(model.into()).await?;
 
-    let selected_processed = &processed[start_index..];
-    let mut aggregation_results = Vec::with_capacity(selected_processed.len());
-
-    for item in selected_processed {
-        let aggregation_result = ullam_common::llama::llm_generate::<
-            ullam_llm::aggregate::FlightAggregation,
-        >(ullam_llm::AGGREGATE_PROMPT, &item.to_string())
-        .await;
-
-        match aggregation_result {
-            Ok(v) => aggregation_results.push(v),
-            Err(e) => tracing::error!(error = ?e, "failed to process chunk, ignoring it"),
-        }
-    }
+    let aggregation_result =
+        ullam_common::llama::llm_generate::<ullam_llm::aggregate::FlightAggregation>(
+            ullam_llm::AGGREGATE_PROMPT,
+            &processed
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join("\n"),
+        )
+        .await?;
 
     if save {
         let path = dir.join("aggregation.json");
@@ -79,7 +74,7 @@ pub async fn process(model: Model, ardupilot_file: PathBuf, save: bool) -> anyho
 
         let _ = std::fs::write(
             path,
-            serde_json::to_string_pretty(&aggregation_results).expect("never fails"),
+            serde_json::to_string_pretty(&aggregation_result).expect("never fails"),
         )
         .inspect_err(|e| tracing::error!(error = ?e, "failed to save intermediate representation"));
     }
@@ -87,11 +82,7 @@ pub async fn process(model: Model, ardupilot_file: PathBuf, save: bool) -> anyho
     let analyze_result =
         ullam_common::llama::llm_generate::<ullam_llm::aggregate::FlightAggregation>(
             ullam_llm::ANALYZE_PROMPT,
-            &aggregation_results
-                .iter()
-                .map(ToString::to_string)
-                .collect::<Vec<_>>()
-                .join("\n"),
+            &aggregation_result.to_string(),
         )
         .await?;
 
@@ -110,43 +101,4 @@ pub async fn process(model: Model, ardupilot_file: PathBuf, save: bool) -> anyho
     println!("{}", analyze_result);
 
     Ok(())
-}
-
-fn select_start_index(
-    processed: &[ullam_preprocessor::PreprocessedLogItem],
-) -> anyhow::Result<usize> {
-    if processed.is_empty() {
-        anyhow::bail!("no chunks were produced from the log file");
-    }
-
-    let start = processed
-        .first()
-        .expect("checked that processed is not empty");
-    let end = processed
-        .last()
-        .expect("checked that processed is not empty");
-    let end_timestamp = end.timestamp + end.duration;
-
-    println!(
-        "Processed {} chunks covering {:.3}s to {:.3}s.",
-        processed.len(),
-        start.timestamp.as_secs_f64(),
-        end_timestamp.as_secs_f64(),
-    );
-
-    loop {
-        print!(
-            "How many chunks should be skipped before analysis? [0-{}]: ",
-            processed.len() - 1
-        );
-        std::io::stdout().flush()?;
-
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-
-        match input.trim().parse::<usize>() {
-            Ok(index) if index < processed.len() => return Ok(index),
-            _ => println!("Please enter a number from 0 to {}.", processed.len() - 1),
-        }
-    }
 }

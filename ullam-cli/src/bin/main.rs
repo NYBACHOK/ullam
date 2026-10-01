@@ -56,6 +56,8 @@ fn setup_logger(log_level: tracing::Level) {
         .add_directive("xet_client=warn".parse().unwrap())
         .add_directive("xet_data=warn".parse().unwrap())
         .add_directive("xet=warn".parse().unwrap())
+        .add_directive("reqwest=warn".parse().unwrap())
+        .add_directive("async_openai=error".parse().unwrap())
         .add_directive("hyper_util=warn".parse().unwrap());
 
     let registry = tracing_subscriber::registry().with(filter);
