@@ -7,6 +7,8 @@ use std::fmt::{self, Display, Formatter};
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct FlightAnalysis {
     pub vehicle_type: VehicleType,
+    /// Short overview of flight
+    pub overview: String,
     pub termination: TerminationAnalysis,
     pub hypotheses: Vec<Hypothesis>,
     pub issues: Vec<Issue>,
@@ -101,6 +103,7 @@ impl Display for FlightAnalysis {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "Flight Analysis")?;
         writeln!(f, "===============")?;
+        writeln!(f, "Overview\n{}", self.overview)?;
 
         writeln!(f)?;
         writeln!(f, "Termination Analysis")?;

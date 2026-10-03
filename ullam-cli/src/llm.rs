@@ -81,13 +81,12 @@ pub async fn process(
         .inspect_err(|e| tracing::error!(error = ?e, "failed to save intermediate representation"));
     }
 
-    let analyze_result =
-        ullam_common::llama::llm_generate::<ullam_llm::aggregate::FlightAggregation>(
-            ullam_llm::ANALYZE_PROMPT,
-            &aggregation_result.to_string(),
-        )
-        .await
-        .context("analyze stage")?;
+    let analyze_result = ullam_common::llama::llm_generate::<ullam_llm::analysis::FlightAnalysis>(
+        ullam_llm::ANALYZE_PROMPT,
+        &aggregation_result.to_string(),
+    )
+    .await
+    .context("analyze stage")?;
 
     if save {
         let path = dir.join("analysis.json");
