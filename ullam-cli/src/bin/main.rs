@@ -12,6 +12,7 @@ async fn main() -> anyhow::Result<()> {
         ardupilot_file,
         command,
         save,
+        venicle_type,
         ..
     } = <Args as clap::Parser>::parse();
 
@@ -28,7 +29,9 @@ async fn main() -> anyhow::Result<()> {
     setup_logger(log_level);
 
     match command {
-        ullam_cli::Subcommand::Llm(model) => llm::process(model, ardupilot_file, save).await?,
+        ullam_cli::Subcommand::Llm(model) => {
+            llm::process(model, ardupilot_file, venicle_type, save).await?
+        }
         ullam_cli::Subcommand::IR { output } => {
             let output = match output {
                 Some(path) if path.extension().unwrap_or_default() == "json" => {
@@ -38,7 +41,7 @@ async fn main() -> anyhow::Result<()> {
                 None => LogOutput::Stdout,
             };
 
-            ir::process(ardupilot_file, output).await?;
+            ir::process(ardupilot_file, output, venicle_type).await?;
         }
     };
 

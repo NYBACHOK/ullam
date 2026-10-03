@@ -3163,6 +3163,7 @@ version = "0.1.0"
 dependencies = [
  "schemars",
  "serde",
+ "ullam-preprocessor",
 ]
 
 [[package]]
@@ -3178,6 +3179,7 @@ dependencies = [
 name = "ullam-preprocessor"
 version = "0.1.0"
 dependencies = [
+ "schemars",
  "serde",
  "serde_json",
  "ullam-parser",

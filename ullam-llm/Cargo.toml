@@ -10,3 +10,4 @@ workspace = true
 [dependencies]
 serde.workspace = true
 schemars.workspace = true
+ullam-preprocessor.workspace = true

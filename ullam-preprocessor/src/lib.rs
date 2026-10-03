@@ -1,6 +1,6 @@
 use std::{collections::HashMap, time::Duration};
 
-use ullam_parser::{LogEntry, LogValue};
+use ullam_parser::LogEntry;
 
 mod config;
 mod types;
@@ -10,8 +10,11 @@ use crate::utils::{HashMapExt, StatsAccumulator};
 
 pub use self::{config::*, types::*};
 
-pub fn process(source: impl Iterator<Item = LogEntry>) -> Vec<PreprocessedLogItem> {
-    process_with_config(source, PreprocessorConfig::default())
+pub fn process(
+    source: impl Iterator<Item = LogEntry>,
+    venicle_type: VenicleType,
+) -> PreprocessedLog {
+    process_with_config(source, PreprocessorConfig::default(), venicle_type)
 }
 
 pub fn process_with_config(
@@ -20,28 +23,47 @@ pub fn process_with_config(
         window_duration,
         messages,
     }: PreprocessorConfig,
-) -> Vec<PreprocessedLogItem> {
+    venicle_type: VenicleType,
+) -> PreprocessedLog {
     assert!(
         window_duration != Duration::ZERO,
         "config `window_duration` can't be ZERO"
     );
 
-    utils::chunks_by_duration(source, window_duration)
-        .filter_map(|this| process_chunk(this, window_duration, &messages))
-        .collect()
+    let mut msgs_count = HashMap::<MsgName, u64>::default();
+    let mut snapshots = HashMap::<MsgName, HashMap<FieldName, Vec<SnapshotedField>>>::default();
+
+    let items = utils::chunks_by_duration(source, window_duration)
+        .filter_map(|this| {
+            process_chunk(
+                this,
+                window_duration,
+                &messages,
+                &mut msgs_count,
+                &mut snapshots,
+            )
+        })
+        .collect();
+
+    PreprocessedLog {
+        venicle_type,
+        items,
+        msgs_count,
+        snapshots,
+    }
 }
 
 fn process_chunk(
     source: Vec<LogEntry>,
     duration: Duration,
     messages: &HashMap<String, MessageConfig>,
+    ir_count_msg: &mut HashMap<MsgName, u64>,
+    ir_snapshoted_fields: &mut HashMap<MsgName, HashMap<FieldName, Vec<SnapshotedField>>>,
 ) -> Option<PreprocessedLogItem> {
     let mut timestamp = None;
 
     let mut ir_events = Vec::new();
-    let mut ir_snapshoted_fields = HashMap::<String, Vec<(String, LogValue)>>::new();
     let mut ir_stats_accumulators = HashMap::<String, HashMap<String, StatsAccumulator>>::new();
-    let mut ir_count_msg = HashMap::<String, u64>::new();
 
     source
         .into_iter()
@@ -69,13 +91,20 @@ fn process_chunk(
                         }
                     }
                     FieldMode::Snapshot => {
-                        let snapshoted_fields =
-                            ir_snapshoted_fields.get_mut_or_insert_default(&log_entry.name);
+                        let snapshoted_fields = ir_snapshoted_fields
+                            .get_mut_or_insert_default(&MsgName(log_entry.name.to_owned()));
 
-                        let field_to_snapshot = (log_field.name, log_field.value);
+                        let snapshoted_field =
+                            snapshoted_fields.get_mut_or_insert_default(&FieldName(log_field.name));
 
-                        if !snapshoted_fields.contains(&field_to_snapshot) {
-                            snapshoted_fields.push(field_to_snapshot);
+                        match snapshoted_field.last() {
+                            Some(last) if last.value == log_field.value => {
+                                // skip pushing new value as old is same and timestamp means start and to end or overwrite with new alue
+                            }
+                            _ => snapshoted_field.push(SnapshotedField {
+                                timestamp: log_entry.timestamp.unwrap_or_default(),
+                                value: log_field.value,
+                            }),
                         }
                     }
                     FieldMode::Stats => {
@@ -94,17 +123,14 @@ fn process_chunk(
                         stats.add(value);
                     }
                     FieldMode::Counter => {
-                        let count = ir_count_msg.get_mut_or_insert_default(&log_entry.name);
+                        let count = ir_count_msg
+                            .get_mut_or_insert_default(&MsgName(log_entry.name.to_owned()));
                         *count += 1;
                     }
                 });
         });
 
-    if ir_events.is_empty()
-        && ir_count_msg.is_empty()
-        && ir_snapshoted_fields.is_empty()
-        && ir_stats_accumulators.is_empty()
-    {
+    if ir_events.is_empty() && ir_stats_accumulators.is_empty() {
         return None;
     }
 
@@ -114,21 +140,13 @@ fn process_chunk(
         windows: ir_stats_accumulators
             .into_iter()
             .map(|(msg_name, windows)| WindowIrRecord {
-                msg: msg_name,
+                msg: MsgName(msg_name),
                 stats: windows
                     .into_iter()
-                    .map(|(field_name, stats)| (field_name, stats.finish()))
+                    .map(|(field_name, stats)| (FieldName(field_name), stats.finish()))
                     .collect(),
             })
             .collect(),
-        snapshots: ir_snapshoted_fields
-            .into_iter()
-            .map(|(msg_name, fields)| SnapshotIrRecord {
-                msg: msg_name,
-                fields,
-            })
-            .collect(),
         messages: ir_events,
-        count: ir_count_msg,
     })
 }

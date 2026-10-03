@@ -3,10 +3,16 @@ use std::{fs::File, path::PathBuf};
 use anyhow::Context;
 use clap::CommandFactory;
 use ullam_common::{APP_DATA_DIR, get_pre_processing_config, llama::serve::binary_location};
+use ullam_preprocessor::VenicleType;
 
 use crate::{Args, Model};
 
-pub async fn process(model: Model, ardupilot_file: PathBuf, save: bool) -> anyhow::Result<()> {
+pub async fn process(
+    model: Model,
+    ardupilot_file: PathBuf,
+    venicle_type: VenicleType,
+    save: bool,
+) -> anyhow::Result<()> {
     match &model {
         Model::Local { path } if !path.ends_with(".gguf") => {
             Args::command()
@@ -40,6 +46,7 @@ pub async fn process(model: Model, ardupilot_file: PathBuf, save: bool) -> anyho
     let processed = ullam_preprocessor::process_with_config(
         logs.into_iter().filter_map(std::result::Result::ok),
         config,
+        venicle_type,
     );
 
     if save {
@@ -56,16 +63,10 @@ pub async fn process(model: Model, ardupilot_file: PathBuf, save: bool) -> anyho
 
     ullam_common::llama::llm_load(model.into()).await?;
 
-    let aggregation_result =
-        ullam_common::llama::llm_generate::<ullam_llm::aggregate::FlightAggregation>(
-            ullam_llm::AGGREGATE_PROMPT,
-            &processed
-                .iter()
-                .map(ToString::to_string)
-                .collect::<Vec<_>>()
-                .join("\n"),
-        )
-        .await?;
+    let aggregation_result = ullam_common::llama::llm_generate::<
+        ullam_llm::aggregate::FlightAggregation,
+    >(ullam_llm::AGGREGATE_PROMPT, &processed.to_string())
+    .await?;
 
     if save {
         let path = dir.join("aggregation.json");

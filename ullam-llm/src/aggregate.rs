@@ -3,11 +3,13 @@ use std::time::Duration;
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use ullam_preprocessor::VenicleType;
 
 use crate::skip_serializing_if_f64;
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct FlightAggregation {
+    pub venicle_type: VenicleType,
     pub schema_version: String,
     pub flight: FlightInfo,
     pub phases: Vec<FlightPhase>,

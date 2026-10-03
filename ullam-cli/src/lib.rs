@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 
-pub mod llm;
+use ullam_preprocessor::VenicleType;
+
 pub mod ir;
+pub mod llm;
 
 #[derive(clap_derive::Parser)]
 #[non_exhaustive]
@@ -12,10 +14,13 @@ pub struct Args {
     /// Save analyzing result into app dir
     #[arg(short, long, required = false, global = true, default_value_t = false)]
     pub save: bool,
-    #[arg(long, global = true, required = false, default_value_t = default_log_level())]
-    pub log_level: tracing::Level,
     #[arg(short = 'i', long, global = true, required = false)]
     pub ardupilot_file: Option<PathBuf>,
+    #[arg(long, required = false, global = true, default_value_t = VenicleType::Plane)]
+    pub venicle_type: VenicleType,
+
+    #[arg(long, global = true, required = false, default_value_t = default_log_level())]
+    pub log_level: tracing::Level,
 }
 
 fn default_log_level() -> tracing::Level {
