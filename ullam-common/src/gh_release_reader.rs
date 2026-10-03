@@ -193,27 +193,24 @@ pub async fn download_file(
         )
     })?;
 
-    if is_exists {
-        if let Ok(meta) = tokio::fs::metadata(&location).await {
-            const LOG_MESSAGE: &str =
-                "Existing download with matching size found. Ignoring download";
+    if is_exists && let Ok(meta) = tokio::fs::metadata(&location).await {
+        const LOG_MESSAGE: &str = "Existing download with matching size found. Ignoring download";
 
-            #[cfg(target_family = "unix")]
-            {
-                use std::os::unix::fs::MetadataExt;
+        #[cfg(target_family = "unix")]
+        {
+            use std::os::unix::fs::MetadataExt;
 
-                if meta.size() == total_size {
-                    tracing::warn!("{LOG_MESSAGE}");
-                }
-            }
-
-            #[cfg(target_family = "windows")]
-            if meta.len() == total_size {
+            if meta.size() == total_size {
                 tracing::warn!("{LOG_MESSAGE}");
             }
-
-            return Ok(());
         }
+
+        #[cfg(target_family = "windows")]
+        if meta.len() == total_size {
+            tracing::warn!("{LOG_MESSAGE}");
+        }
+
+        return Ok(());
     }
 
     // Start the actual download

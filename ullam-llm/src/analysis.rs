@@ -192,12 +192,12 @@ impl Display for FlightAnalysis {
 
 impl Display for Evidence {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "  - [{}] {}", self.strength, self.claim,)?;
+        write!(f, "  - [{}] {}", self.strength, self.claim)?;
 
         write!(f, " ({})", self.source)?;
 
         if let Some(timestamp) = self.timestamp {
-            write!(f, " @ {:.3}s", timestamp)?;
+            write!(f, " @ {timestamp:.3}s")?;
         }
 
         writeln!(f)
@@ -213,7 +213,7 @@ impl Display for EvidenceSource {
         }
 
         if let Some(timestamp) = self.timestamp {
-            write!(f, " @ {:.3}s", timestamp)?;
+            write!(f, " @ {timestamp:.3}s")?;
         }
 
         if let Some(value) = self.value {
@@ -238,12 +238,12 @@ impl Display for EvidenceStrength {
 
 impl Display for Issue {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "- {} [{}]", self.issue, self.importance,)?;
+        writeln!(f, "- {} [{}]", self.issue, self.importance)?;
 
         writeln!(f, "  {}", self.description)?;
 
         if let Some(relevance) = &self.causal_relevance {
-            writeln!(f, "  Causal relevance: {}", relevance)?;
+            writeln!(f, "  Causal relevance: {relevance}")?;
         }
 
         if !self.evidence.is_empty() {
@@ -255,7 +255,7 @@ impl Display for Issue {
         }
 
         if let Some(investigation) = &self.recommended_investigation {
-            writeln!(f, "  Recommended investigation: {}", investigation)?;
+            writeln!(f, "  Recommended investigation: {investigation}")?;
         }
 
         Ok(())

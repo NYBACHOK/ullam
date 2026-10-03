@@ -185,7 +185,7 @@ impl std::fmt::Display for WindowIrRecord {
             .iter()
             .filter(|(_, stats)| stats.has_displayable_values())
             .collect();
-        fields.sort_unstable_by(|(left, _), (right, _)| left.cmp(right));
+        fields.sort_unstable_by_key(|(left, _)| *left);
 
         if fields.is_empty() {
             return Ok(());
@@ -242,7 +242,7 @@ impl std::fmt::Display for PreprocessedLog {
 
         if !self.msgs_count.is_empty() {
             let mut counts: Vec<_> = self.msgs_count.iter().collect();
-            counts.sort_unstable_by(|(left, _), (right, _)| left.cmp(right));
+            counts.sort_unstable_by_key(|(left, _)| *left);
 
             writeln!(f, "COUNTS")?;
             for (message, count) in counts {
@@ -251,7 +251,7 @@ impl std::fmt::Display for PreprocessedLog {
         }
 
         let mut snapshots: Vec<_> = self.snapshots.iter().collect();
-        snapshots.sort_unstable_by(|(left, _), (right, _)| left.cmp(right));
+        snapshots.sort_unstable_by_key(|(left, _)| *left);
         let snapshots: Vec<_> = snapshots
             .into_iter()
             .filter_map(|(message, fields)| {
@@ -259,7 +259,7 @@ impl std::fmt::Display for PreprocessedLog {
                     .iter()
                     .filter(|(_, values)| !values.is_empty())
                     .collect();
-                fields.sort_unstable_by(|(left, _), (right, _)| left.cmp(right));
+                fields.sort_unstable_by_key(|(left, _)| *left);
                 (!fields.is_empty()).then_some((message, fields))
             })
             .collect();

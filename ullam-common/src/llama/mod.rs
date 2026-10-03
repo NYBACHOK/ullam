@@ -26,7 +26,7 @@ pub mod serve;
 pub const LLM_DATA_DIR: &str = "llm";
 pub const LLM_MODELS_DIR: &str = "models";
 
-const TIMEOUT: Duration = Duration::from_secs(60);
+const TIMEOUT: Duration = Duration::from_mins(1);
 
 static IS_LLM_ENGINE_LOADED: AtomicBool = AtomicBool::new(false);
 

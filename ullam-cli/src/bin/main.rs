@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
 
     match command {
         ullam_cli::Subcommand::Llm(model) => {
-            llm::process(model, ardupilot_file, vehicle_type, save).await?
+            llm::process(model, ardupilot_file, vehicle_type, save).await?;
         }
         ullam_cli::Subcommand::IR { output } => {
             let output = match output {
@@ -43,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
 
             ir::process(ardupilot_file, output, vehicle_type).await?;
         }
-    };
+    }
 
     Ok(())
 }

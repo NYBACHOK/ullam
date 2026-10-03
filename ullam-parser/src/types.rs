@@ -51,6 +51,7 @@ impl LogValue {
         }
     }
 
+    #[must_use]
     pub fn try_into_string(self) -> Option<String> {
         let val = match self {
             LogValue::I64(value) => value.to_string(),
@@ -65,6 +66,6 @@ impl LogValue {
             LogValue::Array(_) | LogValue::Time(_) => return None,
         };
 
-        return Some(val);
+        Some(val)
     }
 }

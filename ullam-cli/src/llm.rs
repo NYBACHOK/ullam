@@ -100,7 +100,7 @@ pub async fn process(
         .inspect_err(|e| tracing::error!(error = ?e, "failed to save intermediate representation"));
     }
 
-    println!("{}", analyze_result);
+    println!("{analyze_result}");
 
     Ok(())
 }

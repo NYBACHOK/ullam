@@ -42,11 +42,10 @@ pub fn get_pre_processing_config() -> anyhow::Result<ullam_preprocessor::Preproc
             &std::fs::read(&config_path)?,
         ) {
             return Ok(config);
-        } else {
-            tracing::warn!("old config file is invalid, using default");
-
-            return Ok(ullam_preprocessor::PreprocessorConfig::default());
         }
+        tracing::warn!("old config file is invalid, using default");
+
+        return Ok(ullam_preprocessor::PreprocessorConfig::default());
     }
 
     let config = ullam_preprocessor::PreprocessorConfig::default();

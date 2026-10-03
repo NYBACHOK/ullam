@@ -13,37 +13,34 @@ where
 
     std::iter::from_fn(move || {
         loop {
-            match iter.next() {
-                Some(item) => {
-                    let ts = if let Some(ts) = item.timestamp {
-                        ts
-                    } else {
-                        continue;
-                    };
+            if let Some(item) = iter.next() {
+                let ts = if let Some(ts) = item.timestamp {
+                    ts
+                } else {
+                    continue;
+                };
 
-                    match start_ts {
-                        None => {
-                            start_ts = Some(ts);
-                            chunk.push(item);
-                        }
-                        Some(start) if ts.saturating_sub(start) <= window => {
-                            chunk.push(item);
-                        }
-                        Some(_) => {
-                            let result = std::mem::take(&mut chunk);
-                            start_ts = Some(ts);
-                            chunk.push(item);
-                            return Some(result);
-                        }
+                match start_ts {
+                    None => {
+                        start_ts = Some(ts);
+                        chunk.push(item);
+                    }
+                    Some(start) if ts.saturating_sub(start) <= window => {
+                        chunk.push(item);
+                    }
+                    Some(_) => {
+                        let result = std::mem::take(&mut chunk);
+                        start_ts = Some(ts);
+                        chunk.push(item);
+                        return Some(result);
                     }
                 }
-                None => {
-                    if chunk.is_empty() {
-                        return None;
-                    }
-                    start_ts = None;
-                    return Some(std::mem::take(&mut chunk));
+            } else {
+                if chunk.is_empty() {
+                    return None;
                 }
+                start_ts = None;
+                return Some(std::mem::take(&mut chunk));
             }
         }
     })

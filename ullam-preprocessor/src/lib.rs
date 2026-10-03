@@ -67,10 +67,7 @@ fn process_chunk(
 
     source
         .into_iter()
-        .filter_map(|this| match messages.get(&this.name) {
-            Some(cfg) => Some((this, cfg)),
-            None => None,
-        })
+        .filter_map(|this| messages.get(&this.name).map(|cfg| (this, cfg)))
         .for_each(|(log_entry, msg_cfg)| {
             if timestamp.is_none() && log_entry.timestamp.is_some() {
                 timestamp = Some(log_entry.timestamp);
@@ -79,12 +76,14 @@ fn process_chunk(
             log_entry
                 .fields
                 .into_iter()
-                .filter_map(|this| match msg_cfg.fields.get(&this.name) {
-                    Some(field_cfg) => Some((this, field_cfg)),
-                    None => None,
+                .filter_map(|this| {
+                    msg_cfg
+                        .fields
+                        .get(&this.name)
+                        .map(|field_cfg| (this, field_cfg))
                 })
                 .for_each(|(log_field, field_cfg)| match field_cfg.mode {
-                    FieldMode::Ignore => return,
+                    FieldMode::Ignore => (),
                     FieldMode::Event => {
                         if let Some(value) = log_field.value.try_into_string() {
                             ir_events.push(value);
@@ -92,7 +91,7 @@ fn process_chunk(
                     }
                     FieldMode::Snapshot => {
                         let snapshoted_fields = ir_snapshoted_fields
-                            .get_mut_or_insert_default(&MsgName(log_entry.name.to_owned()));
+                            .get_mut_or_insert_default(&MsgName(log_entry.name.clone()));
 
                         let snapshoted_field =
                             snapshoted_fields.get_mut_or_insert_default(&FieldName(log_field.name));
@@ -124,7 +123,7 @@ fn process_chunk(
                     }
                     FieldMode::Counter => {
                         let count = ir_count_msg
-                            .get_mut_or_insert_default(&MsgName(log_entry.name.to_owned()));
+                            .get_mut_or_insert_default(&MsgName(log_entry.name.clone()));
                         *count += 1;
                     }
                 });
