@@ -2,7 +2,7 @@ use std::{fs::File, path::PathBuf};
 
 use anyhow::Context;
 use ullam_common::get_pre_processing_config;
-use ullam_preprocessor::VenicleType;
+use ullam_preprocessor::VehicleType;
 
 #[derive(Debug)]
 pub enum LogOutput {
@@ -14,7 +14,7 @@ pub enum LogOutput {
 pub async fn process(
     ardupilot_file: PathBuf,
     output: LogOutput,
-    venicle_type: VenicleType,
+    venicle_type: VehicleType,
 ) -> anyhow::Result<()> {
     let config = get_pre_processing_config()?;
 

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use ullam_preprocessor::VenicleType;
+use ullam_preprocessor::VehicleType;
 
 pub mod ir;
 pub mod llm;
@@ -16,8 +16,8 @@ pub struct Args {
     pub save: bool,
     #[arg(short = 'i', long, global = true, required = false)]
     pub ardupilot_file: Option<PathBuf>,
-    #[arg(long, required = false, global = true, default_value_t = VenicleType::Plane)]
-    pub venicle_type: VenicleType,
+    #[arg(long, required = false, global = true, default_value_t = VehicleType::Plane)]
+    pub vehicle_type: VehicleType,
 
     #[arg(long, global = true, required = false, default_value_t = default_log_level())]
     pub log_level: tracing::Level,

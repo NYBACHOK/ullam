@@ -1,12 +1,12 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use ullam_preprocessor::VenicleType;
+use ullam_preprocessor::VehicleType;
 
 use std::fmt::{self, Display, Formatter};
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct FlightAnalysis {
-    pub venicle_type: VenicleType,
+    pub vehicle_type: VehicleType,
     pub termination: TerminationAnalysis,
     pub hypotheses: Vec<Hypothesis>,
     pub issues: Vec<Issue>,

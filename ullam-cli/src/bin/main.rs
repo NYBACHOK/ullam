@@ -12,7 +12,7 @@ async fn main() -> anyhow::Result<()> {
         ardupilot_file,
         command,
         save,
-        venicle_type,
+        vehicle_type,
         ..
     } = <Args as clap::Parser>::parse();
 
@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
 
     match command {
         ullam_cli::Subcommand::Llm(model) => {
-            llm::process(model, ardupilot_file, venicle_type, save).await?
+            llm::process(model, ardupilot_file, vehicle_type, save).await?
         }
         ullam_cli::Subcommand::IR { output } => {
             let output = match output {
@@ -41,7 +41,7 @@ async fn main() -> anyhow::Result<()> {
                 None => LogOutput::Stdout,
             };
 
-            ir::process(ardupilot_file, output, venicle_type).await?;
+            ir::process(ardupilot_file, output, vehicle_type).await?;
         }
     };
 

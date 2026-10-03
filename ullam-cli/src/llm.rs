@@ -3,14 +3,14 @@ use std::{fs::File, path::PathBuf};
 use anyhow::Context;
 use clap::CommandFactory;
 use ullam_common::{APP_DATA_DIR, get_pre_processing_config, llama::serve::binary_location};
-use ullam_preprocessor::VenicleType;
+use ullam_preprocessor::VehicleType;
 
 use crate::{Args, Model};
 
 pub async fn process(
     model: Model,
     ardupilot_file: PathBuf,
-    venicle_type: VenicleType,
+    venicle_type: VehicleType,
     save: bool,
 ) -> anyhow::Result<()> {
     match &model {
@@ -66,7 +66,8 @@ pub async fn process(
     let aggregation_result = ullam_common::llama::llm_generate::<
         ullam_llm::aggregate::FlightAggregation,
     >(ullam_llm::AGGREGATE_PROMPT, &processed.to_string())
-    .await?;
+    .await
+    .context("aggregation stage")?;
 
     if save {
         let path = dir.join("aggregation.json");
@@ -85,7 +86,8 @@ pub async fn process(
             ullam_llm::ANALYZE_PROMPT,
             &aggregation_result.to_string(),
         )
-        .await?;
+        .await
+        .context("analyze stage")?;
 
     if save {
         let path = dir.join("analysis.json");

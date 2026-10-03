@@ -1,15 +1,14 @@
 use std::fmt::{self, Display, Formatter};
-use std::time::Duration;
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use ullam_preprocessor::VenicleType;
+use ullam_preprocessor::VehicleType;
 
 use crate::skip_serializing_if_f64;
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct FlightAggregation {
-    pub venicle_type: VenicleType,
+    pub vehicle_type: VehicleType,
     pub schema_version: String,
     pub flight: FlightInfo,
     pub phases: Vec<FlightPhase>,
@@ -63,7 +62,7 @@ pub enum PhaseType {
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Event {
-    pub timestamp: Duration,
+    pub timestamp: f64,
     #[serde(rename = "type")]
     pub event_type: String,
     pub description: String,
@@ -291,9 +290,7 @@ impl Display for Event {
         write!(
             f,
             "EVENT {:.3}s {} severity={}",
-            self.timestamp.as_secs_f64(),
-            self.event_type,
-            self.severity,
+            self.timestamp, self.event_type, self.severity,
         )?;
 
         write!(f, " {}", self.description)?;

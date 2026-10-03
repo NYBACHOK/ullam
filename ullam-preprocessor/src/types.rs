@@ -64,24 +64,24 @@ impl std::fmt::Display for FieldName {
 #[derive(
     Debug, Clone, serde::Serialize, serde::Deserialize, Eq, PartialEq, Default, schemars::JsonSchema,
 )]
-pub enum VenicleType {
+pub enum VehicleType {
     #[default]
     Plane,
 }
 
-impl std::fmt::Display for VenicleType {
+impl std::fmt::Display for VehicleType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            VenicleType::Plane => write!(f, "plane"),
+            VehicleType::Plane => write!(f, "plane"),
         }
     }
 }
 
-impl std::str::FromStr for VenicleType {
+impl std::str::FromStr for VehicleType {
     type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let kind = match s {
+        let kind = match s.to_lowercase().as_str() {
             "plane" => Self::Plane,
             _ => return Err("invalid type of venicle"),
         };
@@ -156,7 +156,7 @@ impl std::fmt::Display for SnapshotedField {
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct PreprocessedLog {
     /// Type of venicle that performed flight
-    pub venicle_type: VenicleType,
+    pub vehicle_type: VehicleType,
     /// Processed windows of log with stats and timeline
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<PreprocessedLogItem>,
@@ -238,7 +238,7 @@ impl std::fmt::Display for PreprocessedLogItem {
 
 impl std::fmt::Display for PreprocessedLog {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "VEHICLE {}", self.venicle_type)?;
+        writeln!(f, "VEHICLE {}", self.vehicle_type)?;
 
         if !self.msgs_count.is_empty() {
             let mut counts: Vec<_> = self.msgs_count.iter().collect();

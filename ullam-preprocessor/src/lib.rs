@@ -12,9 +12,9 @@ pub use self::{config::*, types::*};
 
 pub fn process(
     source: impl Iterator<Item = LogEntry>,
-    venicle_type: VenicleType,
+    vehicle_type: VehicleType,
 ) -> PreprocessedLog {
-    process_with_config(source, PreprocessorConfig::default(), venicle_type)
+    process_with_config(source, PreprocessorConfig::default(), vehicle_type)
 }
 
 pub fn process_with_config(
@@ -23,7 +23,7 @@ pub fn process_with_config(
         window_duration,
         messages,
     }: PreprocessorConfig,
-    venicle_type: VenicleType,
+    vehicle_type: VehicleType,
 ) -> PreprocessedLog {
     assert!(
         window_duration != Duration::ZERO,
@@ -46,7 +46,7 @@ pub fn process_with_config(
         .collect();
 
     PreprocessedLog {
-        venicle_type,
+        vehicle_type,
         items,
         msgs_count,
         snapshots,
