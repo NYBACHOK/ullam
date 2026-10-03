@@ -44,3 +44,11 @@ cargo run --release -- --log-level info --ardupilot-file /path/to/flight.BIN loc
 ```
 
 The `--save` flag stores intermediate JSON outputs alongside the analysis results for easier debugging and review.
+
+## Model recommendations
+
+Default model may be heavy for local processing as it supports reasoning and app set to use it. Here I will write some of my recommendations about other models.
+
+List of tested model in form of args:
+
+- `Ministral-3-3B-Instruct-2512-Q8_0.gguf mistralai Ministral-3-3B-Instruct-2512-GGUF` - my first test and it able to observe and find correlations with good enough results.
